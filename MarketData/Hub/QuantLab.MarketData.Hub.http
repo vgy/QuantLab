@@ -1,0 +1,6 @@
+@QuantLab.MarketData.Hub_HostAddress = http://localhost:5239
+
+GET {{QuantLab.MarketData.Hub_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
