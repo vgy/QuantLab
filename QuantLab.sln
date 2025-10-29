@@ -7,11 +7,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MarketData", "MarketData", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Hub", "Hub", "{18F0A0D6-7470-5710-F32D-E30006652C8E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuantLab.MarketData.Hub", "MarketData\Hub\QuantLab.MarketData.Hub.csproj", "{F2991E91-0003-4850-92AC-59358C8F7EA0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuantLab.MarketData.Hub", "src\MarketData\Hub\QuantLab.MarketData.Hub.csproj", "{F2991E91-0003-4850-92AC-59358C8F7EA0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Hub.Tests", "Hub.Tests", "{2D978469-BCEF-188E-BBB5-1D811995CD88}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuantLab.MarketData.Hub.Tests", "MarketData\Hub.Tests\QuantLab.MarketData.Hub.Tests.csproj", "{DF753E13-489C-4229-B704-25F4221CAE66}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuantLab.MarketData.Hub.Tests", "tests\MarketData\Hub\QuantLab.MarketData.Hub.UnitTests.csproj", "{DF753E13-489C-4229-B704-25F4221CAE66}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

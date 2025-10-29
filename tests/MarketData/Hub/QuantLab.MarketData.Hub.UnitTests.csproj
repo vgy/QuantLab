@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Hub\QuantLab.MarketData.Hub.csproj" />
+    <ProjectReference Include="..\..\..\src\MarketData\Hub\QuantLab.MarketData.Hub.csproj" />
   </ItemGroup>
 
 </Project>
