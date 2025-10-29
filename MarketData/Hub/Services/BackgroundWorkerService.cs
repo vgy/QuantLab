@@ -2,30 +2,62 @@ namespace QuantLab.MarketData.Hub.Services;
 
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using QuantLab.MarketData.Hub.Models.Config;
+using QuantLab.MarketData.Hub.Services.Interface;
 
-public sealed class BackgroundWorkerService(
-	IBackgroundJobQueue jobQueue,
-	ILogger<BackgroundWorkerService> logger)
-	: BackgroundService
+public sealed class BackgroundWorkerService<T> : BackgroundService
 {
-	protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-	{
-		logger.LogInformation("Background worker started at {Time}", DateTimeOffset.Now);
+    private readonly IBackgroundJobQueue<T> _jobQueue;
+    private readonly ILogger<BackgroundWorkerService<T>> _logger;
+    private readonly int _maxParallelWorkers;
 
-		while (!stoppingToken.IsCancellationRequested)
-		{
-			var workItem = await jobQueue.DequeueAsync(stoppingToken);
+    public BackgroundWorkerService(
+        IBackgroundJobQueue<T> jobQueue,
+        ILogger<BackgroundWorkerService<T>> logger,
+        IOptions<BackgroundWorkerOptions> options
+    )
+    {
+        _jobQueue = jobQueue;
+        _logger = logger;
+        _maxParallelWorkers = options.Value.MaxParallelWorkers;
+    }
 
-			try
-			{
-				await workItem(stoppingToken);
-			}
-			catch (Exception ex)
-			{
-				logger.LogError(ex, "Error occurred executing background job");
-			}
-		}
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        _logger.LogInformation(
+            "Background worker service for {Type} started with {Count} workers",
+            typeof(T).Name,
+            _maxParallelWorkers
+        );
 
-		logger.LogInformation("Background worker stopped at {Time}", DateTimeOffset.Now);
-	}
+        // Start multiple worker tasks
+        var workerLoops = Enumerable
+            .Range(0, _maxParallelWorkers)
+            .Select(i => Task.Run(() => WorkerLoopAsync(i + 1, stoppingToken)))
+            .ToArray();
+
+        await Task.WhenAll(workerLoops); // Waits only when app stops
+    }
+
+    private async Task WorkerLoopAsync(int workerId, CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            var (workItem, tcs) = await _jobQueue.DequeueAsync(stoppingToken);
+
+            try
+            {
+                _logger.LogInformation("👷 Worker {WorkerId} executing job...", workerId);
+                var result = await workItem(stoppingToken);
+                tcs.TrySetResult(result);
+                _logger.LogInformation("✅ Worker {WorkerId} finished job.", workerId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "💥 Worker {WorkerId} encountered an error", workerId);
+                tcs.TrySetException(ex);
+            }
+        }
+    }
 }

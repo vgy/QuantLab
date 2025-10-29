@@ -4,33 +4,24 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
+using NUnit.Framework;
 using QuantLab.MarketData.Hub.Controllers;
 using QuantLab.MarketData.Hub.Services;
-using NUnit.Framework;
+using QuantLab.MarketData.Hub.Services.Interface;
 
 [TestFixture]
 public class JobControllerTests
 {
-    private Mock<IBackgroundJobQueue> _queueMock = null!;
     private Mock<IMarketDataService> _marketMock = null!;
-    private Mock<ILogger<JobController>> _loggerMock = null!;
+    private Mock<IIbkrDataService> _ibkrDataServiceMock = null!;
     private JobController _controller = null!;
 
     [SetUp]
     public void SetUp()
     {
-        _queueMock = new();
-        _marketMock = new Mock<IMarketDataService>();
-        _loggerMock = new();
-        _controller = new(_queueMock.Object, _marketMock.Object, _loggerMock.Object);
-    }
-
-    [Test]
-    public void StartJob_Should_Return_Accepted_And_QueueJob()
-    {
-        var result = _controller.StartJob();
-        result.Should().BeOfType<AcceptedResult>();
-        _queueMock.Verify(q => q.QueueBackgroundWorkItem(It.IsAny<Func<CancellationToken, Task>>()), Times.Once);
+        _marketMock = new();
+        _ibkrDataServiceMock = new();
+        _controller = new(_marketMock.Object, _ibkrDataServiceMock.Object);
     }
 
     [Test]
@@ -59,5 +50,24 @@ public class JobControllerTests
 
         result.Should().NotBeNull();
         (result!.Value as MarketDataStatus)!.IsRunning.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task DownloadContractIds_Should_Invoke_DownloadContractIdsAsync_of_IbkrDataService()
+    {
+        const string expectedMessage = "Retrieved Contract Ids for 100 of 100 symbols";
+        _ibkrDataServiceMock
+            .Setup(m => m.DownloadContractIdsAsync(It.IsAny<string>()))
+            .Returns(Task.FromResult(expectedMessage));
+
+        var result = await _controller.DownloadContractIds();
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+
+        okResult!.Value.Should().BeEquivalentTo(new { message = expectedMessage });
+        _ibkrDataServiceMock.Verify(
+            m => m.DownloadContractIdsAsync(It.IsAny<string>()),
+            Times.Once
+        );
     }
 }

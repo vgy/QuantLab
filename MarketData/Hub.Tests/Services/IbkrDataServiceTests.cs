@@ -1,0 +1,253 @@
+namespace QuantLab.MarketData.Hub.Tests.Services;
+
+using System.Text.Json;
+using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Moq;
+using NUnit.Framework;
+using QuantLab.MarketData.Hub.Models.Domain;
+using QuantLab.MarketData.Hub.Models.DTO.Responses;
+using QuantLab.MarketData.Hub.Services;
+using QuantLab.MarketData.Hub.Services.Interface;
+using QuantLab.MarketData.Hub.Services.Interface.Storage;
+using QuantLab.MarketData.Hub.Tests;
+
+[TestFixture]
+public class IbkrDataServiceTests
+{
+    private Mock<IBackgroundJobQueue<ResponseData>> _jobQueueMock = null!;
+    private Mock<ICsvFileService> _fileServiceMock = null!;
+    private Mock<IbkrDataDownloader> _downloaderMock = null!;
+    private Mock<ILogger<IbkrDataService>> _loggerMock = null!;
+
+    private IbkrDataService _sut = null!;
+
+    private IServiceProvider _serviceProviderMock = null!;
+
+    [SetUp]
+    public void SetUp()
+    {
+        _jobQueueMock = new Mock<IBackgroundJobQueue<ResponseData>>();
+        _fileServiceMock = new Mock<ICsvFileService>();
+        _downloaderMock = new Mock<IbkrDataDownloader>(null!, null!);
+        _loggerMock = new Mock<ILogger<IbkrDataService>>();
+
+        // Fake ServiceProvider & Scope
+        var services = new ServiceCollection();
+        services.AddScoped(_ => _downloaderMock.Object);
+        _serviceProviderMock = services.BuildServiceProvider();
+
+        _sut = new IbkrDataService(
+            _jobQueueMock.Object,
+            _serviceProviderMock,
+            _fileServiceMock.Object,
+            _loggerMock.Object
+        );
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        if (_serviceProviderMock is IDisposable disposable)
+        {
+            disposable.Dispose();
+        }
+    }
+
+    [Test]
+    public async Task DownloadContractIdsAsync_FileWithSymbols_QueuesJobsAndWritesFile()
+    {
+        // Arrange
+        var symbols = new[] { "NIFTY", "BANKNIFTY" };
+        _fileServiceMock
+            .Setup(f =>
+                f.ReadAsync(
+                    "symbols.csv",
+                    It.IsAny<Func<string[], string>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(symbols);
+
+        var responses = symbols
+            .Select(symbol => new ResponseData
+            {
+                Symbol = symbol,
+                Data = new Dictionary<string, object>
+                {
+                    [symbol] = JsonSerializer.Deserialize<JsonElement>("""[{"conid":12345}]"""),
+                },
+            })
+            .ToList();
+
+        _jobQueueMock
+            .SetupSequence(q =>
+                q.QueueAsync(It.IsAny<Func<CancellationToken, Task<ResponseData>>>())
+            )
+            .Returns(Task.FromResult(responses[0]))
+            .Returns(Task.FromResult(responses[1]));
+
+        _fileServiceMock
+            .Setup(f =>
+                f.WriteAsync(
+                    It.Is<string>(s => s == "symbols_contractIds.csv"),
+                    It.IsAny<IEnumerable<Symbol>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _sut.DownloadContractIdsAsync("symbols.csv");
+
+        // Assert
+        result.Should().Be("Retrieved Contract Ids for 2 of 2 symbols");
+
+        _fileServiceMock.Verify(
+            f =>
+                f.WriteAsync(
+                    "symbols_contractIds.csv",
+                    It.Is<List<Symbol>>(l => l.Count == 2),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+
+        _jobQueueMock.Verify(
+            q => q.QueueAsync(It.IsAny<Func<CancellationToken, Task<ResponseData>>>()),
+            Times.Exactly(2)
+        );
+
+        _loggerMock.VerifyLog(LogLevel.Information, Times.AtLeastOnce());
+    }
+
+    [Test]
+    public async Task DownloadContractIdsAsync_EmptyDataInResponse_ParsesNullAndWritesPartialResults()
+    {
+        // Arrange
+        var symbols = new[] { "AAPL", "TSLA" };
+        _fileServiceMock
+            .Setup(f =>
+                f.ReadAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<Func<string[], string>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(symbols);
+
+        var validResponse = new ResponseData
+        {
+            Symbol = "AAPL",
+            Data = new Dictionary<string, object>
+            {
+                ["AAPL"] = JsonSerializer.Deserialize<JsonElement>("""[{"conid":123}]"""),
+            },
+        };
+        var invalidResponse = new ResponseData
+        {
+            Symbol = "TSLA",
+            Data = new Dictionary<string, object>(),
+        };
+
+        _jobQueueMock
+            .SetupSequence(q =>
+                q.QueueAsync(It.IsAny<Func<CancellationToken, Task<ResponseData>>>())
+            )
+            .Returns(Task.FromResult(validResponse))
+            .Returns(Task.FromResult(invalidResponse));
+
+        _fileServiceMock
+            .Setup(f =>
+                f.WriteAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<IEnumerable<Symbol>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _sut.DownloadContractIdsAsync("symbols.csv");
+
+        // Assert
+        result.Should().Be("Retrieved Contract Ids for 1 of 2 symbols");
+
+        _fileServiceMock.Verify(
+            f =>
+                f.WriteAsync(
+                    "symbols_contractIds.csv",
+                    It.Is<List<Symbol>>(l => l.Count == 1 && l[0].Name == "AAPL"),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public void ParseResponseData_ValidResponse_ReturnsSymbol()
+    {
+        // Arrange
+        var jsonElement = JsonSerializer.Deserialize<JsonElement>("""[{"conid":999}]""");
+        var response = new ResponseData
+        {
+            Symbol = "IBM",
+            Data = new Dictionary<string, object> { ["IBM"] = jsonElement },
+        };
+
+        // Act
+        var result = InvokePrivateParseResponseData(response);
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.Value.Name.Should().Be("IBM");
+        result.Value.CurrentFuturesContractId.Should().Be(999);
+    }
+
+    [Test]
+    public void ParseResponseData_EmptyData_ReturnsNullAndLogsError()
+    {
+        // Arrange
+        var response = new ResponseData
+        {
+            Symbol = "GOOG",
+            Data = new Dictionary<string, object>(),
+        };
+
+        // Act
+        var result = InvokePrivateParseResponseData(response);
+
+        // Assert
+        result.Should().BeNull();
+        _loggerMock.VerifyLog(LogLevel.Error, Times.AtLeastOnce());
+    }
+
+    [Test]
+    public void ParseResponseData_MalformedJson_LogsErrorAndReturnsNull()
+    {
+        // Arrange
+        var badJsonElement = JsonSerializer.Deserialize<JsonElement>("""{"unexpected":true}""");
+        var response = new ResponseData
+        {
+            Symbol = "MSFT",
+            Data = new Dictionary<string, object> { ["MSFT"] = badJsonElement },
+        };
+
+        // Act
+        var result = InvokePrivateParseResponseData(response);
+
+        // Assert
+        result.Should().BeNull();
+        _loggerMock.VerifyLog(LogLevel.Error, Times.AtLeastOnce());
+    }
+
+    private Symbol? InvokePrivateParseResponseData(ResponseData responseData)
+    {
+        var method = typeof(IbkrDataService).GetMethod(
+            "ParseResponseData",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+        )!;
+        return (Symbol?)method.Invoke(_sut, new object[] { responseData });
+    }
+}

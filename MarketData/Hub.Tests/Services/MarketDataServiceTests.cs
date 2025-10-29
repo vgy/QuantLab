@@ -1,12 +1,10 @@
 namespace QuantLab.MarketData.Hub.Tests.Services;
 
 using System.Net;
-using System.Net.Http;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using QuantLab.MarketData.Hub.Services;
-using NUnit.Framework;
 
 [TestFixture]
 public class MarketDataServiceTests
@@ -25,7 +23,8 @@ public class MarketDataServiceTests
     [Test]
     public void Start_Should_Set_IsRunning_True()
     {
-        _httpFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>()))
+        _httpFactoryMock
+            .Setup(f => f.CreateClient(It.IsAny<string>()))
             .Returns(new HttpClient(new MockHandler(HttpStatusCode.OK, "{}")));
 
         _service = new(_loggerMock.Object, _httpFactoryMock.Object);
@@ -37,7 +36,8 @@ public class MarketDataServiceTests
     [Test]
     public void Stop_Should_CancelAndSetNotRunning()
     {
-        _httpFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>()))
+        _httpFactoryMock
+            .Setup(f => f.CreateClient(It.IsAny<string>()))
             .Returns(new HttpClient(new MockHandler(HttpStatusCode.OK, "{}")));
 
         _service = new(_loggerMock.Object, _httpFactoryMock.Object);
@@ -50,7 +50,8 @@ public class MarketDataServiceTests
     [Test]
     public async Task Should_Stop_On_Unauthorized()
     {
-        _httpFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>()))
+        _httpFactoryMock
+            .Setup(f => f.CreateClient(It.IsAny<string>()))
             .Returns(new HttpClient(new MockHandler(HttpStatusCode.Unauthorized, "Unauthorized")));
 
         _service = new(_loggerMock.Object, _httpFactoryMock.Object);
@@ -65,7 +66,8 @@ public class MarketDataServiceTests
     [Test]
     public async Task Should_Record_SuccessfulFetch()
     {
-        _httpFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>()))
+        _httpFactoryMock
+            .Setup(f => f.CreateClient(It.IsAny<string>()))
             .Returns(new HttpClient(new MockHandler(HttpStatusCode.OK, """{"symbol":"AAPL"}""")));
 
         _service = new(_loggerMock.Object, _httpFactoryMock.Object);
@@ -77,13 +79,14 @@ public class MarketDataServiceTests
         _service.Status.LastResponseSnippet.Should().Contain("AAPL");
     }
 
-    private sealed class MockHandler(HttpStatusCode status, string response)
-        : HttpMessageHandler
+    private sealed class MockHandler(HttpStatusCode status, string response) : HttpMessageHandler
     {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage _, CancellationToken __)
-            => Task.FromResult(new HttpResponseMessage(status)
-            {
-                Content = new StringContent(response)
-            });
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage _,
+            CancellationToken __
+        ) =>
+            Task.FromResult(
+                new HttpResponseMessage(status) { Content = new StringContent(response) }
+            );
     }
 }
