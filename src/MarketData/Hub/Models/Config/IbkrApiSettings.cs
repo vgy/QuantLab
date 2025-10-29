@@ -1,6 +1,6 @@
 namespace QuantLab.MarketData.Hub.Models.Config;
 
-public sealed class IbkrSettings
+public sealed class IbkrApiSettings
 {
     public string BaseUrl { get; set; } = string.Empty;
     public string UserAgent { get; set; } = "MyApp/1.0";

@@ -1,4 +1,4 @@
-namespace QuantLab.MarketData.Hub.Tests;
+namespace QuantLab.MarketData.Hub.UnitTests;
 
 using Microsoft.Extensions.Logging;
 using Moq;

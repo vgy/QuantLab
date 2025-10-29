@@ -1,4 +1,4 @@
-namespace QuantLab.MarketData.Hub.Tests.Services;
+namespace QuantLab.MarketData.Hub.UnitTests.Services.Download.Ibkr;
 
 using System.Collections.Generic;
 using System.Net;
@@ -11,23 +11,23 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
-using QuantLab.MarketData.Hub.Services;
+using QuantLab.MarketData.Hub.Services.Download.Ibkr;
 
 [TestFixture]
-public class IbkrDataDownloaderTests
+public class IbkrDownloadServiceTests
 {
-    private Mock<ILogger<IbkrDataDownloader>> _loggerMock = null!;
+    private Mock<ILogger<IbkrDownloadService>> _loggerMock = null!;
     private HttpClient _httpClient = null!;
     private MockHttpMessageHandler _httpHandler = null!;
-    private IbkrDataDownloader _sut = null!;
+    private IbkrDownloadService _ibkrDownloadService = null!;
 
     [SetUp]
     public void SetUp()
     {
-        _loggerMock = new Mock<ILogger<IbkrDataDownloader>>();
+        _loggerMock = new Mock<ILogger<IbkrDownloadService>>();
         _httpHandler = new MockHttpMessageHandler();
         _httpClient = new HttpClient(_httpHandler);
-        _sut = new IbkrDataDownloader(_httpClient, _loggerMock.Object);
+        _ibkrDownloadService = new IbkrDownloadService(_httpClient, _loggerMock.Object);
     }
 
     [TearDown]
@@ -38,7 +38,7 @@ public class IbkrDataDownloaderTests
     }
 
     [Test]
-    public async Task DownloadRecordAsync_ValidResponse_ReturnsParsedData()
+    public async Task DownloadAsync_ValidResponse_ReturnsParsedData()
     {
         // Arrange
         var symbol = "AAPL";
@@ -53,7 +53,7 @@ public class IbkrDataDownloaderTests
         );
 
         // Act
-        var result = await _sut.DownloadRecordAsync(symbol, path);
+        var result = await _ibkrDownloadService.DownloadAsync(symbol, path);
 
         // Assert
         result.Symbol.Should().Be(symbol);
@@ -64,7 +64,7 @@ public class IbkrDataDownloaderTests
     }
 
     [Test]
-    public async Task DownloadRecordAsync_RetriableStatusThenSuccess_RetriesAndSucceeds()
+    public async Task DownloadAsync_RetriableStatusThenSuccess_RetriesAndSucceeds()
     {
         // Arrange
         var symbol = "MSFT";
@@ -78,7 +78,7 @@ public class IbkrDataDownloaderTests
         );
 
         // Act
-        var result = await _sut.DownloadRecordAsync(symbol, path);
+        var result = await _ibkrDownloadService.DownloadAsync(symbol, path);
 
         // Assert
         result.Data.Should().ContainKey("MSFT");
@@ -89,7 +89,7 @@ public class IbkrDataDownloaderTests
     }
 
     [Test]
-    public async Task DownloadRecordAsync_AllRetriesFail_ReturnsEmptyData()
+    public async Task DownloadAsync_AllRetriesFail_ReturnsEmptyData()
     {
         // Arrange
         var symbol = "TSLA";
@@ -99,7 +99,7 @@ public class IbkrDataDownloaderTests
         _httpHandler.QueueResponse(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
 
         // Act
-        var result = await _sut.DownloadRecordAsync(symbol, path);
+        var result = await _ibkrDownloadService.DownloadAsync(symbol, path);
 
         // Assert
         result.Symbol.Should().Be(symbol);
@@ -110,7 +110,7 @@ public class IbkrDataDownloaderTests
     }
 
     [Test]
-    public async Task DownloadRecordAsync_NonRetriableStatus_ReturnsEmptyData()
+    public async Task DownloadAsync_NonRetriableStatus_ReturnsEmptyData()
     {
         // Arrange
         var symbol = "NFLX";
@@ -122,7 +122,7 @@ public class IbkrDataDownloaderTests
         _httpHandler.QueueResponse(response);
 
         // Act
-        var result = await _sut.DownloadRecordAsync(symbol, path);
+        var result = await _ibkrDownloadService.DownloadAsync(symbol, path);
 
         // Assert
         result.Data.Should().BeEmpty();
@@ -130,7 +130,7 @@ public class IbkrDataDownloaderTests
     }
 
     [Test]
-    public async Task DownloadRecordAsync_HttpClientThrowsException_ReturnsEmptyData()
+    public async Task DownloadAsync_HttpClientThrowsException_ReturnsEmptyData()
     {
         // Arrange
         var symbol = "GOOG";
@@ -138,7 +138,7 @@ public class IbkrDataDownloaderTests
         _httpHandler.ThrowOnSend(new HttpRequestException("Network failure"));
 
         // Act
-        var result = await _sut.DownloadRecordAsync(symbol, path);
+        var result = await _ibkrDownloadService.DownloadAsync(symbol, path);
 
         // Assert
         result.Data.Should().BeEmpty();
@@ -146,7 +146,7 @@ public class IbkrDataDownloaderTests
     }
 
     [Test]
-    public void DownloadRecordAsync_CancelledBeforeRequest_ThrowsOperationCanceledException()
+    public void DownloadAsync_CancelledBeforeRequest_ThrowsOperationCanceledException()
     {
         // Arrange
         var symbol = "META";
@@ -156,7 +156,7 @@ public class IbkrDataDownloaderTests
 
         // Act + Assert
         Assert.CatchAsync<OperationCanceledException>(async () =>
-            await _sut.DownloadRecordAsync(symbol, path, cts.Token)
+            await _ibkrDownloadService.DownloadAsync(symbol, path, cts.Token)
         );
         _loggerMock.VerifyLogMessage(
             LogLevel.Warning,
@@ -166,7 +166,7 @@ public class IbkrDataDownloaderTests
     }
 
     [Test]
-    public async Task DownloadRecordAsync_InvalidJson_ReturnsEmptyData()
+    public async Task DownloadAsync_InvalidJson_ReturnsEmptyData()
     {
         // Arrange
         var symbol = "IBM";
@@ -176,7 +176,7 @@ public class IbkrDataDownloaderTests
         );
 
         // Act
-        var result = await _sut.DownloadRecordAsync(symbol, path);
+        var result = await _ibkrDownloadService.DownloadAsync(symbol, path);
 
         // Assert
         result.Data.Should().BeEmpty();

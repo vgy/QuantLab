@@ -1,26 +1,26 @@
-namespace QuantLab.MarketData.Hub.Services;
+namespace QuantLab.MarketData.Hub.Services.Download;
 
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using QuantLab.MarketData.Hub.Models.Config;
-using QuantLab.MarketData.Hub.Services.Interface;
+using QuantLab.MarketData.Hub.Services.Interface.Download;
 
-public sealed class BackgroundWorkerService<T> : BackgroundService
+public sealed class DownloadBackgroundService<T> : BackgroundService
 {
-    private readonly IBackgroundJobQueue<T> _jobQueue;
-    private readonly ILogger<BackgroundWorkerService<T>> _logger;
+    private readonly IDownloadQueue<T> _downloadQueue;
+    private readonly ILogger<DownloadBackgroundService<T>> _logger;
     private readonly int _maxParallelWorkers;
 
-    public BackgroundWorkerService(
-        IBackgroundJobQueue<T> jobQueue,
-        ILogger<BackgroundWorkerService<T>> logger,
-        IOptions<BackgroundWorkerOptions> options
+    public DownloadBackgroundService(
+        IDownloadQueue<T> downloadQueue,
+        ILogger<DownloadBackgroundService<T>> logger,
+        IOptions<MaxDownloadSettings> maxDownloadSettings
     )
     {
-        _jobQueue = jobQueue;
+        _downloadQueue = downloadQueue;
         _logger = logger;
-        _maxParallelWorkers = options.Value.MaxParallelWorkers;
+        _maxParallelWorkers = maxDownloadSettings.Value.MaxParallelWorkers;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -44,7 +44,7 @@ public sealed class BackgroundWorkerService<T> : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            var (workItem, tcs) = await _jobQueue.DequeueAsync(stoppingToken);
+            var (workItem, tcs) = await _downloadQueue.DequeueAsync(stoppingToken);
 
             try
             {

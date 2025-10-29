@@ -1,16 +1,16 @@
-namespace QuantLab.MarketData.Hub.Services;
+namespace QuantLab.MarketData.Hub.Services.Download.Ibkr;
 
 using QuantLab.MarketData.Hub.Models.DTO.Responses;
-using QuantLab.MarketData.Hub.Services.Interface;
+using QuantLab.MarketData.Hub.Services.Interface.Download.Ibkr;
 
-public class IbkrDataDownloader(HttpClient httpClient, ILogger<IbkrDataDownloader> logger)
-    : IIbkrDataDownloader
+public class IbkrDownloadService(HttpClient httpClient, ILogger<IbkrDownloadService> logger)
+    : IIbkrDownloadService
 {
     private const int MaxRetries = 3;
     private static readonly HashSet<int> RetryStatuses = [429, 503];
     private static readonly Range RetryStatusRange = 500..600;
 
-    public async Task<ResponseData> DownloadRecordAsync(
+    public async Task<ResponseData> DownloadAsync(
         string symbol,
         string path,
         CancellationToken cancellationToken = default

@@ -1,4 +1,4 @@
-namespace QuantLab.MarketData.Hub.Tests.Controllers;
+namespace QuantLab.MarketData.Hub.UnitTests.Controllers;
 
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
@@ -7,21 +7,21 @@ using Moq;
 using NUnit.Framework;
 using QuantLab.MarketData.Hub.Controllers;
 using QuantLab.MarketData.Hub.Services;
-using QuantLab.MarketData.Hub.Services.Interface;
+using QuantLab.MarketData.Hub.Services.Interface.Download.Ibkr;
 
 [TestFixture]
 public class JobControllerTests
 {
     private Mock<IMarketDataService> _marketMock = null!;
-    private Mock<IIbkrDataService> _ibkrDataServiceMock = null!;
+    private Mock<IIbkrContractIdDownloadService> _ibkrContractIdDownloadServiceMock = null!;
     private JobController _controller = null!;
 
     [SetUp]
     public void SetUp()
     {
         _marketMock = new();
-        _ibkrDataServiceMock = new();
-        _controller = new(_marketMock.Object, _ibkrDataServiceMock.Object);
+        _ibkrContractIdDownloadServiceMock = new();
+        _controller = new(_marketMock.Object, _ibkrContractIdDownloadServiceMock.Object);
     }
 
     [Test]
@@ -53,10 +53,10 @@ public class JobControllerTests
     }
 
     [Test]
-    public async Task DownloadContractIds_Should_Invoke_DownloadContractIdsAsync_of_IbkrDataService()
+    public async Task DownloadContractIds_Should_Invoke_DownloadContractIdsAsync_of_IbkrContractIdDownloadService()
     {
         const string expectedMessage = "Retrieved Contract Ids for 100 of 100 symbols";
-        _ibkrDataServiceMock
+        _ibkrContractIdDownloadServiceMock
             .Setup(m => m.DownloadContractIdsAsync(It.IsAny<string>()))
             .Returns(Task.FromResult(expectedMessage));
 
@@ -65,7 +65,7 @@ public class JobControllerTests
         okResult.Should().NotBeNull();
 
         okResult!.Value.Should().BeEquivalentTo(new { message = expectedMessage });
-        _ibkrDataServiceMock.Verify(
+        _ibkrContractIdDownloadServiceMock.Verify(
             m => m.DownloadContractIdsAsync(It.IsAny<string>()),
             Times.Once
         );

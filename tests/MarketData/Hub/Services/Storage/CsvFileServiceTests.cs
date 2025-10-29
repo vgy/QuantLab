@@ -1,4 +1,4 @@
-namespace QuantLab.MarketData.Hub.Tests.Services.Storage;
+namespace QuantLab.MarketData.Hub.UnitTests.Services.Storage;
 
 using System.IO;
 using System.Linq;

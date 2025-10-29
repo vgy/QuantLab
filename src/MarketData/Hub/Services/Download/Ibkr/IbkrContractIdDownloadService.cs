@@ -1,36 +1,37 @@
-namespace QuantLab.MarketData.Hub.Services;
+namespace QuantLab.MarketData.Hub.Services.Download.Ibkr;
 
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using QuantLab.MarketData.Hub.Models.Domain;
 using QuantLab.MarketData.Hub.Models.DTO.Responses;
-using QuantLab.MarketData.Hub.Services.Interface;
+using QuantLab.MarketData.Hub.Services.Interface.Download;
+using QuantLab.MarketData.Hub.Services.Interface.Download.Ibkr;
 using QuantLab.MarketData.Hub.Services.Interface.Storage;
 
-public sealed class IbkrDataService(
-    IBackgroundJobQueue<ResponseData> jobQueue,
+public sealed class IbkrContractIdDownloadService(
+    IDownloadQueue<ResponseData> downloadQueue,
     IServiceProvider serviceProvider,
     ICsvFileService fileService,
-    ILogger<IbkrDataService> logger
-) : IIbkrDataService
+    ILogger<IbkrContractIdDownloadService> logger
+) : IIbkrContractIdDownloadService
 {
     private readonly IServiceProvider serviceProvider = serviceProvider;
-    private readonly ILogger<IbkrDataService> logger = logger;
+    private readonly ILogger<IbkrContractIdDownloadService> logger = logger;
 
     public async Task<string> DownloadContractIdsAsync(string file)
     {
         var symbols = await fileService.ReadAsync(file, a => a[0]);
 
         using var scope = serviceProvider.CreateScope();
-        var ibkrDataDownloader = scope.ServiceProvider.GetRequiredService<IbkrDataDownloader>();
+        var ibkrDownloadService = scope.ServiceProvider.GetRequiredService<IbkrDownloadService>();
         var tasks = new List<Task<ResponseData>>();
         foreach (var symbol in symbols)
         {
             var path = $"v1/api/trsrv/futures?symbols={symbol}&exchange=NSE";
-            var task = jobQueue.QueueAsync(async token =>
+            var task = downloadQueue.QueueAsync(async token =>
             {
                 logger.LogInformation("📥 Queued job for {symbol}", symbol);
-                return await ibkrDataDownloader.DownloadRecordAsync(symbol, path, token);
+                return await ibkrDownloadService.DownloadAsync(symbol, path, token);
             });
 
             tasks.Add(task);

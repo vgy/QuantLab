@@ -2,12 +2,14 @@ namespace QuantLab.MarketData.Hub.Controllers;
 
 using Microsoft.AspNetCore.Mvc;
 using QuantLab.MarketData.Hub.Services;
-using QuantLab.MarketData.Hub.Services.Interface;
+using QuantLab.MarketData.Hub.Services.Interface.Download.Ibkr;
 
 [ApiController]
 [Route("api/[controller]")]
-public class JobController(IMarketDataService marketDataService, IIbkrDataService ibkrDataService)
-    : ControllerBase
+public class JobController(
+    IMarketDataService marketDataService,
+    IIbkrContractIdDownloadService ibkrContractIdDownloadService
+) : ControllerBase
 {
     [HttpPost("marketdata/start")]
     public IActionResult StartMarketDataJob()
@@ -29,7 +31,7 @@ public class JobController(IMarketDataService marketDataService, IIbkrDataServic
     [HttpGet("data/download/contractids")]
     public async Task<IActionResult> DownloadContractIds()
     {
-        var message = await ibkrDataService.DownloadContractIdsAsync("symbols.csv");
+        var message = await ibkrContractIdDownloadService.DownloadContractIdsAsync("symbols.csv");
         return Ok(new { message });
     }
 }

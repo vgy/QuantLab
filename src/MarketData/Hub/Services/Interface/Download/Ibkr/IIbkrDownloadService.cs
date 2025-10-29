@@ -1,10 +1,10 @@
-namespace QuantLab.MarketData.Hub.Services.Interface;
+namespace QuantLab.MarketData.Hub.Services.Interface.Download.Ibkr;
 
 using QuantLab.MarketData.Hub.Models.DTO.Responses;
 
-public interface IIbkrDataDownloader
+public interface IIbkrDownloadService
 {
-    Task<ResponseData> DownloadRecordAsync(
+    Task<ResponseData> DownloadAsync(
         string symbol,
         string url,
         CancellationToken cancellationToken = default

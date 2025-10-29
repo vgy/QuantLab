@@ -3,16 +3,17 @@ using QuantLab.MarketData.Hub.Grpc;
 using QuantLab.MarketData.Hub.Models.Config;
 using QuantLab.MarketData.Hub.Models.DTO.Responses;
 using QuantLab.MarketData.Hub.Services;
-using QuantLab.MarketData.Hub.Services.Interface;
+using QuantLab.MarketData.Hub.Services.Download;
+using QuantLab.MarketData.Hub.Services.Download.Ibkr;
+using QuantLab.MarketData.Hub.Services.Interface.Download;
+using QuantLab.MarketData.Hub.Services.Interface.Download.Ibkr;
 using QuantLab.MarketData.Hub.Services.Interface.Storage;
 using QuantLab.MarketData.Hub.Services.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.Configure<IbkrSettings>(builder.Configuration.GetSection("IbkrSettings"));
-builder.Services.Configure<BackgroundWorkerOptions>(
-    builder.Configuration.GetSection("BackgroundWorker")
-);
+builder.Services.Configure<IbkrApiSettings>(builder.Configuration.GetSection("IbkrApi"));
+builder.Services.Configure<MaxDownloadSettings>(builder.Configuration.GetSection("MaxDownload"));
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -22,16 +23,16 @@ builder.Services.AddGrpc();
 builder.Services.AddHttpClient();
 
 builder.Services.AddSingleton<ICsvFileService, CsvFileService>();
-builder.Services.AddSingleton(typeof(IBackgroundJobQueue<>), typeof(BackgroundJobQueue<>));
-builder.Services.AddHostedService<BackgroundWorkerService<ResponseData>>();
+builder.Services.AddSingleton(typeof(IDownloadQueue<>), typeof(DownloadQueue<>));
+builder.Services.AddHostedService<DownloadBackgroundService<ResponseData>>();
 builder.Services.AddSingleton<IMarketDataService, MarketDataService>();
-builder.Services.AddSingleton<IIbkrDataService, IbkrDataService>();
+builder.Services.AddSingleton<IIbkrContractIdDownloadService, IbkrContractIdDownloadService>();
 
 builder
-    .Services.AddHttpClient<IbkrDataDownloader>(
+    .Services.AddHttpClient<IbkrDownloadService>(
         (serviceProvider, client) =>
         {
-            var settings = serviceProvider.GetRequiredService<IOptions<IbkrSettings>>().Value;
+            var settings = serviceProvider.GetRequiredService<IOptions<IbkrApiSettings>>().Value;
             client.BaseAddress = new Uri(settings.BaseUrl);
             client.DefaultRequestHeaders.Add("User-Agent", settings.UserAgent);
             client.DefaultRequestHeaders.Add("Accept", settings.Accept);
@@ -39,7 +40,7 @@ builder
     )
     .ConfigurePrimaryHttpMessageHandler(serviceProvider =>
     {
-        var settings = serviceProvider.GetRequiredService<IOptions<IbkrSettings>>().Value;
+        var settings = serviceProvider.GetRequiredService<IOptions<IbkrApiSettings>>().Value;
         if (settings.BypassSsl)
         {
             // Development only: bypass SSL validation

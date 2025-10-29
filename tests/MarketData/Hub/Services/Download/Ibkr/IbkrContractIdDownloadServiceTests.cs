@@ -1,4 +1,4 @@
-namespace QuantLab.MarketData.Hub.Tests.Services;
+namespace QuantLab.MarketData.Hub.UnitTests.Services.Download.Ibkr;
 
 using System.Text.Json;
 using FluentAssertions;
@@ -8,40 +8,40 @@ using Moq;
 using NUnit.Framework;
 using QuantLab.MarketData.Hub.Models.Domain;
 using QuantLab.MarketData.Hub.Models.DTO.Responses;
-using QuantLab.MarketData.Hub.Services;
-using QuantLab.MarketData.Hub.Services.Interface;
+using QuantLab.MarketData.Hub.Services.Download.Ibkr;
+using QuantLab.MarketData.Hub.Services.Interface.Download;
 using QuantLab.MarketData.Hub.Services.Interface.Storage;
-using QuantLab.MarketData.Hub.Tests;
+using QuantLab.MarketData.Hub.UnitTests;
 
 [TestFixture]
-public class IbkrDataServiceTests
+public class IIbkrContractIdDownloadServiceTests
 {
-    private Mock<IBackgroundJobQueue<ResponseData>> _jobQueueMock = null!;
-    private Mock<ICsvFileService> _fileServiceMock = null!;
-    private Mock<IbkrDataDownloader> _downloaderMock = null!;
-    private Mock<ILogger<IbkrDataService>> _loggerMock = null!;
+    private Mock<IDownloadQueue<ResponseData>> _downloadQueueMock = null!;
+    private Mock<ICsvFileService> _csvFileServiceMock = null!;
+    private Mock<IbkrDownloadService> _ibkrDownloadServiceMock = null!;
+    private Mock<ILogger<IbkrContractIdDownloadService>> _loggerMock = null!;
 
-    private IbkrDataService _sut = null!;
+    private IbkrContractIdDownloadService _ibkrContractIdDownloadService = null!;
 
     private IServiceProvider _serviceProviderMock = null!;
 
     [SetUp]
     public void SetUp()
     {
-        _jobQueueMock = new Mock<IBackgroundJobQueue<ResponseData>>();
-        _fileServiceMock = new Mock<ICsvFileService>();
-        _downloaderMock = new Mock<IbkrDataDownloader>(null!, null!);
-        _loggerMock = new Mock<ILogger<IbkrDataService>>();
+        _downloadQueueMock = new Mock<IDownloadQueue<ResponseData>>();
+        _csvFileServiceMock = new Mock<ICsvFileService>();
+        _ibkrDownloadServiceMock = new Mock<IbkrDownloadService>(null!, null!);
+        _loggerMock = new Mock<ILogger<IbkrContractIdDownloadService>>();
 
         // Fake ServiceProvider & Scope
         var services = new ServiceCollection();
-        services.AddScoped(_ => _downloaderMock.Object);
+        services.AddScoped(_ => _ibkrDownloadServiceMock.Object);
         _serviceProviderMock = services.BuildServiceProvider();
 
-        _sut = new IbkrDataService(
-            _jobQueueMock.Object,
+        _ibkrContractIdDownloadService = new IbkrContractIdDownloadService(
+            _downloadQueueMock.Object,
             _serviceProviderMock,
-            _fileServiceMock.Object,
+            _csvFileServiceMock.Object,
             _loggerMock.Object
         );
     }
@@ -60,7 +60,7 @@ public class IbkrDataServiceTests
     {
         // Arrange
         var symbols = new[] { "NIFTY", "BANKNIFTY" };
-        _fileServiceMock
+        _csvFileServiceMock
             .Setup(f =>
                 f.ReadAsync(
                     "symbols.csv",
@@ -81,14 +81,14 @@ public class IbkrDataServiceTests
             })
             .ToList();
 
-        _jobQueueMock
+        _downloadQueueMock
             .SetupSequence(q =>
                 q.QueueAsync(It.IsAny<Func<CancellationToken, Task<ResponseData>>>())
             )
             .Returns(Task.FromResult(responses[0]))
             .Returns(Task.FromResult(responses[1]));
 
-        _fileServiceMock
+        _csvFileServiceMock
             .Setup(f =>
                 f.WriteAsync(
                     It.Is<string>(s => s == "symbols_contractIds.csv"),
@@ -99,12 +99,12 @@ public class IbkrDataServiceTests
             .Returns(Task.CompletedTask);
 
         // Act
-        var result = await _sut.DownloadContractIdsAsync("symbols.csv");
+        var result = await _ibkrContractIdDownloadService.DownloadContractIdsAsync("symbols.csv");
 
         // Assert
         result.Should().Be("Retrieved Contract Ids for 2 of 2 symbols");
 
-        _fileServiceMock.Verify(
+        _csvFileServiceMock.Verify(
             f =>
                 f.WriteAsync(
                     "symbols_contractIds.csv",
@@ -114,7 +114,7 @@ public class IbkrDataServiceTests
             Times.Once
         );
 
-        _jobQueueMock.Verify(
+        _downloadQueueMock.Verify(
             q => q.QueueAsync(It.IsAny<Func<CancellationToken, Task<ResponseData>>>()),
             Times.Exactly(2)
         );
@@ -127,7 +127,7 @@ public class IbkrDataServiceTests
     {
         // Arrange
         var symbols = new[] { "AAPL", "TSLA" };
-        _fileServiceMock
+        _csvFileServiceMock
             .Setup(f =>
                 f.ReadAsync(
                     It.IsAny<string>(),
@@ -151,14 +151,14 @@ public class IbkrDataServiceTests
             Data = new Dictionary<string, object>(),
         };
 
-        _jobQueueMock
+        _downloadQueueMock
             .SetupSequence(q =>
                 q.QueueAsync(It.IsAny<Func<CancellationToken, Task<ResponseData>>>())
             )
             .Returns(Task.FromResult(validResponse))
             .Returns(Task.FromResult(invalidResponse));
 
-        _fileServiceMock
+        _csvFileServiceMock
             .Setup(f =>
                 f.WriteAsync(
                     It.IsAny<string>(),
@@ -169,12 +169,12 @@ public class IbkrDataServiceTests
             .Returns(Task.CompletedTask);
 
         // Act
-        var result = await _sut.DownloadContractIdsAsync("symbols.csv");
+        var result = await _ibkrContractIdDownloadService.DownloadContractIdsAsync("symbols.csv");
 
         // Assert
         result.Should().Be("Retrieved Contract Ids for 1 of 2 symbols");
 
-        _fileServiceMock.Verify(
+        _csvFileServiceMock.Verify(
             f =>
                 f.WriteAsync(
                     "symbols_contractIds.csv",
@@ -244,10 +244,11 @@ public class IbkrDataServiceTests
 
     private Symbol? InvokePrivateParseResponseData(ResponseData responseData)
     {
-        var method = typeof(IbkrDataService).GetMethod(
+        var method = typeof(IbkrContractIdDownloadService).GetMethod(
             "ParseResponseData",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
         )!;
-        return (Symbol?)method.Invoke(_sut, new object[] { responseData });
+        return (Symbol?)
+            method.Invoke(_ibkrContractIdDownloadService, new object[] { responseData });
     }
 }

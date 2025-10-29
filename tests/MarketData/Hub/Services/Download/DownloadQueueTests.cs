@@ -1,4 +1,4 @@
-namespace QuantLab.MarketData.Hub.Tests.Services;
+namespace QuantLab.MarketData.Hub.UnitTests.Services.Download;
 
 using System;
 using System.Threading;
@@ -6,28 +6,28 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using NUnit.Framework;
 using QuantLab.MarketData.Hub.Models.Config;
-using QuantLab.MarketData.Hub.Services;
+using QuantLab.MarketData.Hub.Services.Download;
 
 [TestFixture]
-public sealed class BackgroundJobQueueTests
+public sealed class DownloadQueueTests
 {
-    private static BackgroundJobQueue<T> CreateQueue<T>(int maxQueueSize = 100)
+    private static DownloadQueue<T> CreateQueue<T>(int maxQueueSize = 100)
     {
-        var options = Options.Create(new BackgroundWorkerOptions { MaxQueueSize = maxQueueSize });
-        return new BackgroundJobQueue<T>(options);
+        var options = Options.Create(new MaxDownloadSettings { MaxQueueSize = maxQueueSize });
+        return new DownloadQueue<T>(options);
     }
 
     [Test]
-    public async Task QueueBackgroundWorkItem_WhenWorkItemIsQueued_ReturnsExpectedResult()
+    public async Task QueueDownloadItem_WhenQueueItemIsQueued_ReturnsExpectedResult()
     {
         // Arrange
         var queue = CreateQueue<int>();
         var expected = 42;
 
-        Func<CancellationToken, Task<int>> workItem = _ => Task.FromResult(expected);
+        Func<CancellationToken, Task<int>> queueItem = _ => Task.FromResult(expected);
 
         // Act
-        var enqueueTask = queue.QueueAsync(workItem);
+        var enqueueTask = queue.QueueAsync(queueItem);
         var (dequeuedWork, tcs) = await queue.DequeueAsync(CancellationToken.None);
 
         var result = await dequeuedWork(CancellationToken.None);
@@ -40,7 +40,7 @@ public sealed class BackgroundJobQueueTests
     }
 
     [Test]
-    public void QueueBackgroundWorkItem_WhenWorkItemIsNull_ThrowsArgumentNullException()
+    public void QueueDownloadItem_WhenQueueItemIsNull_ThrowsArgumentNullException()
     {
         // Arrange
         var queue = CreateQueue<int>();
@@ -62,15 +62,15 @@ public sealed class BackgroundJobQueueTests
         await Task.Delay(100); // Ensure DequeueAsync is waiting
         _ = queue.QueueAsync(_ => Task.FromResult("done"));
 
-        var (workItem, tcs) = await dequeueTask;
+        var (queueItem, tcs) = await dequeueTask;
 
         // Assert
-        Assert.That(workItem, Is.Not.Null);
+        Assert.That(queueItem, Is.Not.Null);
         Assert.That(tcs, Is.Not.Null);
     }
 
     [Test]
-    public async Task QueueBackgroundWorkItem_WhenQueueIsFull_WaitsUntilSlotIsFreed()
+    public async Task QueueDownloadItem_WhenQueueIsFull_WaitsUntilSlotIsFreed()
     {
         // Arrange
         const int maxQueueSize = 1;
@@ -83,10 +83,10 @@ public sealed class BackgroundJobQueueTests
 
         // Act
         // Dequeue one to free a slot
-        var (workItem1, tcs1) = await queue.DequeueAsync(CancellationToken.None);
-        await workItem1(CancellationToken.None);
-        var (workItem2, tcs2) = await queue.DequeueAsync(CancellationToken.None);
-        var result = await workItem2(CancellationToken.None);
+        var (queueItem1, tcs1) = await queue.DequeueAsync(CancellationToken.None);
+        await queueItem1(CancellationToken.None);
+        var (queueItem2, tcs2) = await queue.DequeueAsync(CancellationToken.None);
+        var result = await queueItem2(CancellationToken.None);
         tcs2.SetResult(result);
 
         var finalResult = await enqueueTask;
@@ -130,9 +130,9 @@ public sealed class BackgroundJobQueueTests
         var first = await queue.DequeueAsync(CancellationToken.None);
         var second = await queue.DequeueAsync(CancellationToken.None);
 
-        // Complete the dequeued tasks (simulate worker processing)
-        first.Tcs.SetResult(await first.WorkItem(CancellationToken.None));
-        second.Tcs.SetResult(await second.WorkItem(CancellationToken.None));
+        // Complete the dequeued tasks (simulate queue processing)
+        first.Tcs.SetResult(await first.QueueItem(CancellationToken.None));
+        second.Tcs.SetResult(await second.QueueItem(CancellationToken.None));
 
         var result1 = await enqueueTask1;
         var result2 = await enqueueTask2;

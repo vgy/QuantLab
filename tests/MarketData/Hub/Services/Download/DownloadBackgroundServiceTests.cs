@@ -1,4 +1,4 @@
-namespace QuantLab.MarketData.Hub.Tests.Services;
+namespace QuantLab.MarketData.Hub.UnitTests.Services.Download;
 
 using System;
 using System.Threading;
@@ -8,23 +8,23 @@ using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
 using QuantLab.MarketData.Hub.Models.Config;
-using QuantLab.MarketData.Hub.Services;
-using QuantLab.MarketData.Hub.Services.Interface;
+using QuantLab.MarketData.Hub.Services.Download;
+using QuantLab.MarketData.Hub.Services.Interface.Download;
 
 [TestFixture]
-public sealed class BackgroundWorkerServiceTests
+public sealed class DownloadBackgroundServiceTests
 {
-    private Mock<IBackgroundJobQueue<int>> _mockQueue = null!;
-    private Mock<ILogger<BackgroundWorkerService<int>>> _mockLogger = null!;
-    private IOptions<BackgroundWorkerOptions> _options = null!;
+    private Mock<IDownloadQueue<int>> _mockDownloadQueue = null!;
+    private Mock<ILogger<DownloadBackgroundService<int>>> _mockLogger = null!;
+    private IOptions<MaxDownloadSettings> _maxDownloadSettings = null!;
 
     [SetUp]
     public void Setup()
     {
-        _mockQueue = new Mock<IBackgroundJobQueue<int>>();
-        _mockLogger = new Mock<ILogger<BackgroundWorkerService<int>>>();
-        _options = Options.Create(
-            new BackgroundWorkerOptions { MaxParallelWorkers = 3, MaxQueueSize = 100 }
+        _mockDownloadQueue = new Mock<IDownloadQueue<int>>();
+        _mockLogger = new Mock<ILogger<DownloadBackgroundService<int>>>();
+        _maxDownloadSettings = Options.Create(
+            new MaxDownloadSettings { MaxParallelWorkers = 3, MaxQueueSize = 100 }
         );
     }
 
@@ -32,10 +32,10 @@ public sealed class BackgroundWorkerServiceTests
     public void Constructor_WhenCalled_SetsMaxParallelWorkersFromOptions()
     {
         // Act
-        var service = new BackgroundWorkerService<int>(
-            _mockQueue.Object,
+        var service = new DownloadBackgroundService<int>(
+            _mockDownloadQueue.Object,
             _mockLogger.Object,
-            _options
+            _maxDownloadSettings
         );
 
         // Assert
@@ -49,7 +49,7 @@ public sealed class BackgroundWorkerServiceTests
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
         int dequeueCalls = 0;
 
-        _mockQueue
+        _mockDownloadQueue
             .Setup(q => q.DequeueAsync(It.IsAny<CancellationToken>()))
             .Returns(
                 async (CancellationToken token) =>
@@ -63,10 +63,10 @@ public sealed class BackgroundWorkerServiceTests
                 }
             );
 
-        var service = new BackgroundWorkerService<int>(
-            _mockQueue.Object,
+        var service = new DownloadBackgroundService<int>(
+            _mockDownloadQueue.Object,
             _mockLogger.Object,
-            _options
+            _maxDownloadSettings
         );
 
         // Act
@@ -89,26 +89,26 @@ public sealed class BackgroundWorkerServiceTests
         var tcs = new TaskCompletionSource<int>();
         var workItem = new Func<CancellationToken, Task<int>>(_ => Task.FromResult(42));
 
-        _mockQueue
+        _mockDownloadQueue
             .Setup(q => q.DequeueAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync((workItem, tcs));
 
-        var service = new BackgroundWorkerService<int>(
-            _mockQueue.Object,
+        var service = new DownloadBackgroundService<int>(
+            _mockDownloadQueue.Object,
             _mockLogger.Object,
-            _options
+            _maxDownloadSettings
         );
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
 
         // Act
         var workerTask = Task.Run(() =>
-            typeof(BackgroundWorkerService<int>)
+            typeof(DownloadBackgroundService<int>)
                 .GetMethod(
                     "WorkerLoopAsync",
                     System.Reflection.BindingFlags.NonPublic
                         | System.Reflection.BindingFlags.Instance
                 )!
-                .Invoke(service, new object[] { 1, cts.Token })
+                .Invoke(service, [1, cts.Token])
         );
 
         await Task.Delay(50); // Let worker process
@@ -136,26 +136,26 @@ public sealed class BackgroundWorkerServiceTests
             throw new InvalidOperationException("boom")
         );
 
-        _mockQueue
+        _mockDownloadQueue
             .Setup(q => q.DequeueAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync((workItem, tcs));
 
-        var service = new BackgroundWorkerService<int>(
-            _mockQueue.Object,
+        var service = new DownloadBackgroundService<int>(
+            _mockDownloadQueue.Object,
             _mockLogger.Object,
-            _options
+            _maxDownloadSettings
         );
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
 
         // Act
         var workerTask = Task.Run(() =>
-            typeof(BackgroundWorkerService<int>)
+            typeof(DownloadBackgroundService<int>)
                 .GetMethod(
                     "WorkerLoopAsync",
                     System.Reflection.BindingFlags.NonPublic
                         | System.Reflection.BindingFlags.Instance
                 )!
-                .Invoke(service, new object[] { 1, cts.Token })
+                .Invoke(service, [1, cts.Token])
         );
 
         await Task.Delay(50);
@@ -181,27 +181,27 @@ public sealed class BackgroundWorkerServiceTests
         var tcs = new TaskCompletionSource<int>();
         var workItem = new Func<CancellationToken, Task<int>>(_ => Task.FromResult(10));
 
-        _mockQueue
+        _mockDownloadQueue
             .Setup(q => q.DequeueAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync((workItem, tcs));
 
-        var service = new BackgroundWorkerService<int>(
-            _mockQueue.Object,
+        var service = new DownloadBackgroundService<int>(
+            _mockDownloadQueue.Object,
             _mockLogger.Object,
-            _options
+            _maxDownloadSettings
         );
         using var cts = new CancellationTokenSource();
         cts.CancelAfter(100);
 
         // Act
         var workerTask = Task.Run(() =>
-            typeof(BackgroundWorkerService<int>)
+            typeof(DownloadBackgroundService<int>)
                 .GetMethod(
                     "WorkerLoopAsync",
                     System.Reflection.BindingFlags.NonPublic
                         | System.Reflection.BindingFlags.Instance
                 )!
-                .Invoke(service, new object[] { 1, cts.Token })
+                .Invoke(service, [1, cts.Token])
         );
 
         await Task.WhenAny(workerTask, Task.Delay(1000));
@@ -292,32 +292,25 @@ public sealed class BackgroundWorkerServiceTests
         var cts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
         var tcs = new TaskCompletionSource<int>();
 
-        _mockQueue
+        _mockDownloadQueue
             .Setup(q => q.DequeueAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(
-                (
-                    (Func<CancellationToken, Task<int>>)(
-                        _ => throw new InvalidOperationException("Boom")
-                    ),
-                    tcs
-                )
-            );
+            .ReturnsAsync((_ => throw new InvalidOperationException("Boom"), tcs));
 
         // Access private WorkerLoopAsync via reflection
-        var method = typeof(BackgroundWorkerService<int>).GetMethod(
+        var method = typeof(DownloadBackgroundService<int>).GetMethod(
             "WorkerLoopAsync",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
         );
         Assert.That(method, Is.Not.Null);
 
-        var service = new BackgroundWorkerService<int>(
-            _mockQueue.Object,
+        var service = new DownloadBackgroundService<int>(
+            _mockDownloadQueue.Object,
             _mockLogger.Object,
-            _options
+            _maxDownloadSettings
         );
 
         // Act
-        var task = (Task)method!.Invoke(service, new object?[] { 1, cts.Token })!;
+        var task = (Task)method!.Invoke(service, [1, cts.Token])!;
         await Task.Yield(); // allow the worker loop to start
 
         cts.Cancel(); // stop the loop
