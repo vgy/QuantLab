@@ -10,17 +10,25 @@ public sealed class DownloadBackgroundService<T> : BackgroundService
 {
     private readonly IDownloadQueue<T> _downloadQueue;
     private readonly ILogger<DownloadBackgroundService<T>> _logger;
+    private readonly IOptionsMonitor<DownloadServiceSettings> _downloadServiceSettingsMonitor;
     private readonly int _maxParallelWorkers;
+    private int _currentBatchCount = 0;
+    private TaskCompletionSource _batchTcs = new(
+        TaskCreationOptions.RunContinuationsAsynchronously
+    );
+    private readonly object _batchLock = new();
 
     public DownloadBackgroundService(
         IDownloadQueue<T> downloadQueue,
         ILogger<DownloadBackgroundService<T>> logger,
-        IOptions<MaxDownloadSettings> maxDownloadSettings
+        IOptionsMonitor<DownloadServiceSettings> downloadServiceSettingsMonitor
     )
     {
         _downloadQueue = downloadQueue;
         _logger = logger;
-        _maxParallelWorkers = maxDownloadSettings.Value.MaxParallelWorkers;
+        _downloadServiceSettingsMonitor = downloadServiceSettingsMonitor;
+        _maxParallelWorkers = _downloadServiceSettingsMonitor.CurrentValue.MaxParallelWorkers;
+        _batchTcs.SetResult(); // First batch starts immediately
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -46,6 +54,30 @@ public sealed class DownloadBackgroundService<T> : BackgroundService
         {
             var (workItem, tcs) = await _downloadQueue.DequeueAsync(stoppingToken);
 
+            // ===== Batch throttling BEFORE starting work =====
+            TaskCompletionSource tcsToAwait;
+            lock (_batchLock)
+            {
+                _currentBatchCount++;
+                tcsToAwait = _batchTcs;
+
+                // Trigger batch delay if this is the last worker in the batch
+                if (_currentBatchCount % _maxParallelWorkers == 0)
+                {
+                    _currentBatchCount = 0;
+                    var nextBatchTcs = new TaskCompletionSource(
+                        TaskCreationOptions.RunContinuationsAsynchronously
+                    );
+                    _batchTcs = nextBatchTcs;
+
+                    // Fire-and-forget batch delay
+                    _ = TriggerBatchDelayAsync(nextBatchTcs, stoppingToken);
+                }
+            }
+
+            // Wait for current batch to be released
+            await tcsToAwait.Task.WaitAsync(stoppingToken);
+
             try
             {
                 _logger.LogInformation("👷 Worker {WorkerId} executing job...", workerId);
@@ -58,6 +90,25 @@ public sealed class DownloadBackgroundService<T> : BackgroundService
                 _logger.LogError(ex, "💥 Worker {WorkerId} encountered an error", workerId);
                 tcs.TrySetException(ex);
             }
+        }
+    }
+
+    private async Task TriggerBatchDelayAsync(
+        TaskCompletionSource nextBatchTcs,
+        CancellationToken stoppingToken
+    )
+    {
+        try
+        {
+            var delay = _downloadServiceSettingsMonitor.CurrentValue.BatchDelayMilliseconds;
+            await Task.Delay(delay, stoppingToken);
+            nextBatchTcs.SetResult(); // release next batch
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation(
+                "💥 Delay of download jobs batch got cancelled - OperationCanceledException"
+            );
         }
     }
 }

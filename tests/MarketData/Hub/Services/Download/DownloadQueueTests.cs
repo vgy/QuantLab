@@ -13,7 +13,7 @@ public sealed class DownloadQueueTests
 {
     private static DownloadQueue<T> CreateQueue<T>(int maxQueueSize = 100)
     {
-        var options = Options.Create(new MaxDownloadSettings { MaxQueueSize = maxQueueSize });
+        var options = Options.Create(new DownloadServiceSettings { MaxQueueSize = maxQueueSize });
         return new DownloadQueue<T>(options);
     }
 

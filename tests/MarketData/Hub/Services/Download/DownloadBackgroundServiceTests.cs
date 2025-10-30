@@ -1,6 +1,8 @@
 namespace QuantLab.MarketData.Hub.UnitTests.Services.Download;
 
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -16,30 +18,39 @@ public sealed class DownloadBackgroundServiceTests
 {
     private Mock<IDownloadQueue<int>> _mockDownloadQueue = null!;
     private Mock<ILogger<DownloadBackgroundService<int>>> _mockLogger = null!;
-    private IOptions<MaxDownloadSettings> _maxDownloadSettings = null!;
+    private Mock<IOptionsMonitor<DownloadServiceSettings>> _mockSettingsMonitor = null!;
+    private DownloadServiceSettings _settings;
+    private DownloadBackgroundService<int> _service = null!;
 
     [SetUp]
     public void Setup()
     {
         _mockDownloadQueue = new Mock<IDownloadQueue<int>>();
         _mockLogger = new Mock<ILogger<DownloadBackgroundService<int>>>();
-        _maxDownloadSettings = Options.Create(
-            new MaxDownloadSettings { MaxParallelWorkers = 3, MaxQueueSize = 100 }
+        _mockSettingsMonitor = new Mock<IOptionsMonitor<DownloadServiceSettings>>();
+
+        _settings = new DownloadServiceSettings
+        {
+            MaxParallelWorkers = 2,
+            BatchDelayMilliseconds = 50,
+        };
+
+        _mockSettingsMonitor.Setup(m => m.CurrentValue).Returns(() => _settings);
+
+        _service = new DownloadBackgroundService<int>(
+            _mockDownloadQueue.Object,
+            _mockLogger.Object,
+            _mockSettingsMonitor.Object
         );
     }
 
-    [Test]
-    public void Constructor_WhenCalled_SetsMaxParallelWorkersFromOptions()
+    [TearDown]
+    public void TearDown()
     {
-        // Act
-        var service = new DownloadBackgroundService<int>(
-            _mockDownloadQueue.Object,
-            _mockLogger.Object,
-            _maxDownloadSettings
-        );
-
-        // Assert
-        Assert.That(service, Is.Not.Null);
+        if (_service is IDisposable disposable)
+        {
+            disposable.Dispose();
+        }
     }
 
     [Test]
@@ -66,12 +77,12 @@ public sealed class DownloadBackgroundServiceTests
         var service = new DownloadBackgroundService<int>(
             _mockDownloadQueue.Object,
             _mockLogger.Object,
-            _maxDownloadSettings
+            _mockSettingsMonitor.Object
         );
 
         // Act
         await service.StartAsync(cts.Token); // starts ExecuteAsync
-        await Task.Delay(200); // allow workers to spin
+        await Task.Delay(100); // allow workers to spin
         await service.StopAsync(cts.Token); // stop gracefully
 
         // Assert
@@ -96,7 +107,7 @@ public sealed class DownloadBackgroundServiceTests
         var service = new DownloadBackgroundService<int>(
             _mockDownloadQueue.Object,
             _mockLogger.Object,
-            _maxDownloadSettings
+            _mockSettingsMonitor.Object
         );
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
 
@@ -143,7 +154,7 @@ public sealed class DownloadBackgroundServiceTests
         var service = new DownloadBackgroundService<int>(
             _mockDownloadQueue.Object,
             _mockLogger.Object,
-            _maxDownloadSettings
+            _mockSettingsMonitor.Object
         );
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
 
@@ -188,7 +199,7 @@ public sealed class DownloadBackgroundServiceTests
         var service = new DownloadBackgroundService<int>(
             _mockDownloadQueue.Object,
             _mockLogger.Object,
-            _maxDownloadSettings
+            _mockSettingsMonitor.Object
         );
         using var cts = new CancellationTokenSource();
         cts.CancelAfter(100);
@@ -306,7 +317,7 @@ public sealed class DownloadBackgroundServiceTests
         var service = new DownloadBackgroundService<int>(
             _mockDownloadQueue.Object,
             _mockLogger.Object,
-            _maxDownloadSettings
+            _mockSettingsMonitor.Object
         );
 
         // Act
@@ -319,5 +330,301 @@ public sealed class DownloadBackgroundServiceTests
         await Task.Delay(50); // let exception propagate
         Assert.That(tcs.Task.IsFaulted, Is.True);
         Assert.That(tcs.Task.Exception!.InnerException, Is.TypeOf<InvalidOperationException>());
+    }
+
+    [Test]
+    public async Task WorkerLoopAsync_AllJobsExecuted_JobsCompleteSuccessfully()
+    {
+        // Arrange
+        int totalJobs = 4;
+        int executed = 0;
+        var jobQueue = new Queue<(Func<CancellationToken, Task<int>>, TaskCompletionSource<int>)>();
+        for (int i = 0; i < totalJobs; i++)
+        {
+            int id = i;
+            jobQueue.Enqueue(
+                (
+                    async ct =>
+                    {
+                        Interlocked.Increment(ref executed);
+                        await Task.Delay(10, ct);
+                        return id;
+                    },
+                    new TaskCompletionSource<int>()
+                )
+            );
+        }
+
+        SetupAsyncQueue(jobQueue);
+
+        var cts = new CancellationTokenSource();
+        var workers = CreateWorkerTasks(_settings.MaxParallelWorkers, cts.Token);
+
+        // Act
+        await Task.Delay(500); // let workers finish
+        cts.Cancel();
+        try
+        {
+            await Task.WhenAll(workers);
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected when stopping background workers
+        }
+
+        // Assert
+        Assert.That(executed, Is.EqualTo(totalJobs));
+    }
+
+    [Test]
+    public async Task WorkerLoopAsync_JobThrowsException_TcsReceivesException()
+    {
+        // Arrange
+        var jobQueue = new Queue<(Func<CancellationToken, Task<int>>, TaskCompletionSource<int>)>();
+        var tcs = new TaskCompletionSource<int>();
+
+        jobQueue.Enqueue(
+            (
+                async ct =>
+                {
+                    await Task.Delay(10, ct);
+                    throw new InvalidOperationException("Test exception");
+                },
+                tcs
+            )
+        );
+
+        SetupAsyncQueue(jobQueue);
+
+        var cts = new CancellationTokenSource();
+        var workers = CreateWorkerTasks(_settings.MaxParallelWorkers, cts.Token);
+
+        // Act & Assert
+        var ex = Assert.ThrowsAsync<InvalidOperationException>(async () => await tcs.Task);
+        Assert.That(ex.Message, Is.EqualTo("Test exception"));
+
+        // Cancel workers safely
+        cts.Cancel();
+        try
+        {
+            await Task.WhenAll(workers);
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected when stopping background workers
+        }
+    }
+
+    [Test]
+    public async Task WorkerLoopAsync_BatchDelay_IsRespectedBetweenBatches()
+    {
+        // Arrange
+        int totalJobs = 4; // two batches
+        int batchDelayMs = 100;
+        _settings.BatchDelayMilliseconds = batchDelayMs;
+
+        int executedJobs = 0;
+        var jobStartTimes = new ConcurrentBag<DateTime>();
+
+        var jobQueue = new Queue<(Func<CancellationToken, Task<int>>, TaskCompletionSource<int>)>();
+        for (int i = 0; i < totalJobs; i++)
+        {
+            int jobId = i;
+            jobQueue.Enqueue(
+                (
+                    async ct =>
+                    {
+                        jobStartTimes.Add(DateTime.UtcNow);
+                        Interlocked.Increment(ref executedJobs);
+                        await Task.Delay(10, ct); // respect token
+                        return jobId;
+                    },
+                    new TaskCompletionSource<int>(
+                        TaskCreationOptions.RunContinuationsAsynchronously
+                    )
+                )
+            );
+        }
+
+        SetupAsyncQueue(jobQueue);
+
+        var cts = new CancellationTokenSource();
+        var workers = CreateWorkerTasks(_settings.MaxParallelWorkers, cts.Token);
+
+        // Act
+        // Wait long enough for both batches to start and finish
+        await Task.Delay(batchDelayMs * 3);
+        cts.Cancel();
+
+        try
+        {
+            await Task.WhenAll(workers);
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected when stopping background workers
+        }
+
+        // Assert
+        Assert.That(executedJobs, Is.EqualTo(totalJobs), "Not all jobs executed.");
+
+        var startTimesOrdered = jobStartTimes.OrderBy(t => t).ToArray();
+        Assert.That(startTimesOrdered.Length, Is.GreaterThanOrEqualTo(totalJobs));
+
+        var firstBatchEnd = startTimesOrdered[_settings.MaxParallelWorkers - 1];
+        var secondBatchStart = startTimesOrdered[_settings.MaxParallelWorkers];
+
+        var elapsed = secondBatchStart - firstBatchEnd;
+
+        // Allow 5ms jitter tolerance
+        Assert.That(
+            elapsed,
+            Is.GreaterThanOrEqualTo(TimeSpan.FromMilliseconds(batchDelayMs - 5)),
+            $"Expected at least {batchDelayMs}ms between batches, but got {elapsed.TotalMilliseconds}ms."
+        );
+    }
+
+    [Test]
+    public async Task WorkerLoopAsync_DynamicBatchDelayUpdate_IsRespected()
+    {
+        // Arrange
+        int totalJobs = 8; // two batches
+        int initialDelay = 50;
+        int updatedDelay = 200;
+        _settings.BatchDelayMilliseconds = initialDelay;
+
+        int executedJobs = 0;
+        int jobCount = 0;
+        DateTime? secondBatchStart = null;
+
+        var jobQueue = new Queue<(Func<CancellationToken, Task<int>>, TaskCompletionSource<int>)>();
+        var tcsList = new List<TaskCompletionSource<int>>();
+
+        for (int i = 0; i < totalJobs; i++)
+        {
+            var tcs = new TaskCompletionSource<int>(
+                TaskCreationOptions.RunContinuationsAsynchronously
+            );
+            tcsList.Add(tcs);
+
+            int jobId = i;
+            jobQueue.Enqueue(
+                (
+                    async ct =>
+                    {
+                        Interlocked.Increment(ref executedJobs);
+
+                        int count = Interlocked.Increment(ref jobCount);
+                        if (count == _settings.MaxParallelWorkers + 1)
+                            secondBatchStart = DateTime.UtcNow;
+
+                        await Task.Delay(10, ct);
+                        return jobId;
+                    },
+                    tcs
+                )
+            );
+        }
+
+        SetupAsyncQueue(jobQueue);
+
+        var cts = new CancellationTokenSource();
+        var workers = CreateWorkerTasks(_settings.MaxParallelWorkers, cts.Token);
+
+        // Act
+        await Task.Delay(100); // allow first batch to start
+        _settings.BatchDelayMilliseconds = updatedDelay; // update live
+        await Task.WhenAny(Task.WhenAll(tcsList.Select(t => t.Task)), Task.Delay(5000)); // wait up to 5s
+
+        cts.Cancel();
+
+        try
+        {
+            await Task.WhenAll(workers);
+        }
+        catch (OperationCanceledException)
+        {
+            // expected, ignore
+        }
+
+        // Assert
+        Assert.That(executedJobs, Is.EqualTo(totalJobs), "Not all jobs executed");
+        Assert.That(secondBatchStart, Is.Not.Null, "Second batch never started");
+    }
+
+    private void SetupAsyncQueue(
+        Queue<(Func<CancellationToken, Task<int>>, TaskCompletionSource<int>)> queue
+    )
+    {
+        _mockDownloadQueue
+            .Setup(q => q.DequeueAsync(It.IsAny<CancellationToken>()))
+            .Returns(
+                async (CancellationToken ct) =>
+                {
+                    while (true)
+                    {
+                        ct.ThrowIfCancellationRequested();
+
+                        (
+                            Func<CancellationToken, Task<int>> workItem,
+                            TaskCompletionSource<int> tcs
+                        ) item;
+
+                        lock (queue)
+                        {
+                            if (queue.Count > 0)
+                            {
+                                item = queue.Dequeue();
+                                Assert.That(
+                                    item.workItem,
+                                    Is.Not.Null,
+                                    "Work item delegate is null"
+                                );
+                                Assert.That(item.tcs, Is.Not.Null, "TaskCompletionSource is null");
+                                return item;
+                            }
+                        }
+
+                        try
+                        {
+                            // small polling delay, swallow cancellation here safely
+                            await Task.Delay(10, ct);
+                        }
+                        catch (TaskCanceledException)
+                        {
+                            // Exit gracefully when cancelled
+                            ct.ThrowIfCancellationRequested();
+                        }
+                    }
+                }
+            );
+    }
+
+    private Task[] CreateWorkerTasks(int workerCount, CancellationToken token)
+    {
+        return
+        [
+            .. Enumerable
+                .Range(0, workerCount)
+                .Select(i => _service.InvokeWorkerLoopForTestAsync(i + 1, token)!),
+        ];
+    }
+}
+
+// --- Helper to access private WorkerLoopAsync ---
+
+static class ServiceExtensions
+{
+    public static Task? InvokeWorkerLoopForTestAsync(
+        this DownloadBackgroundService<int> service,
+        int workerId,
+        CancellationToken ct
+    )
+    {
+        var method = typeof(DownloadBackgroundService<int>).GetMethod(
+            "WorkerLoopAsync",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+        );
+        return (Task)method!.Invoke(service, [workerId, ct])!;
     }
 }

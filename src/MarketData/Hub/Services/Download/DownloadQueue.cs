@@ -24,9 +24,9 @@ public sealed class DownloadQueue<T> : IDownloadQueue<T>, IDisposable
     private readonly SemaphoreSlim _signal = new(0);
     private readonly SemaphoreSlim _queueSlots; // Backpressure. Controls how many can be queued at once.
 
-    public DownloadQueue(IOptions<MaxDownloadSettings> maxDownloadSettings)
+    public DownloadQueue(IOptions<DownloadServiceSettings> downloadServiceSettings)
     {
-        int maxQueueSize = maxDownloadSettings.Value.MaxQueueSize;
+        int maxQueueSize = downloadServiceSettings.Value.MaxQueueSize;
         _queueSlots = new SemaphoreSlim(maxQueueSize, maxQueueSize);
     }
 

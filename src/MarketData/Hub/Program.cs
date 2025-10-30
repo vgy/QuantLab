@@ -12,8 +12,12 @@ using QuantLab.MarketData.Hub.Services.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.Configure<IbkrApiSettings>(builder.Configuration.GetSection("IbkrApi"));
-builder.Services.Configure<MaxDownloadSettings>(builder.Configuration.GetSection("MaxDownload"));
+builder.Services.Configure<IbkrApiSettings>(
+    builder.Configuration.GetSection(IbkrApiSettings.SectionName)
+);
+builder.Services.Configure<DownloadServiceSettings>(
+    builder.Configuration.GetSection(DownloadServiceSettings.SectionName)
+);
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
