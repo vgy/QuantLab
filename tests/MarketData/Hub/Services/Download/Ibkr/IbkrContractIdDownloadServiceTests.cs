@@ -4,8 +4,10 @@ using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
+using QuantLab.MarketData.Hub.Models.Config;
 using QuantLab.MarketData.Hub.Models.Domain;
 using QuantLab.MarketData.Hub.Models.DTO.Responses;
 using QuantLab.MarketData.Hub.Services.Download.Ibkr;
@@ -19,11 +21,14 @@ public class IIbkrContractIdDownloadServiceTests
     private Mock<IDownloadQueue<ResponseData>> _downloadQueueMock = null!;
     private Mock<ICsvFileService> _csvFileServiceMock = null!;
     private Mock<IbkrDownloadService> _ibkrDownloadServiceMock = null!;
+    private Mock<IOptions<FileStorageSettings>> _fileStorageSettingsMock = null!;
     private Mock<ILogger<IbkrContractIdDownloadService>> _loggerMock = null!;
 
     private IbkrContractIdDownloadService _ibkrContractIdDownloadService = null!;
 
     private IServiceProvider _serviceProviderMock = null!;
+    private const string SymbolsFileName = "sym.csv";
+    private const string SymbolsAndContractIdsFileName = "sym_conIds.csv";
 
     [SetUp]
     public void SetUp()
@@ -31,7 +36,14 @@ public class IIbkrContractIdDownloadServiceTests
         _downloadQueueMock = new Mock<IDownloadQueue<ResponseData>>();
         _csvFileServiceMock = new Mock<ICsvFileService>();
         _ibkrDownloadServiceMock = new Mock<IbkrDownloadService>(null!, null!);
+        _fileStorageSettingsMock = new();
         _loggerMock = new Mock<ILogger<IbkrContractIdDownloadService>>();
+        var fileStorageSettings = new FileStorageSettings
+        {
+            SymbolsFileName = SymbolsFileName,
+            SymbolsAndContractIdsFileName = SymbolsAndContractIdsFileName,
+        };
+        _fileStorageSettingsMock.Setup(x => x.Value).Returns(fileStorageSettings);
 
         // Fake ServiceProvider & Scope
         var services = new ServiceCollection();
@@ -42,6 +54,7 @@ public class IIbkrContractIdDownloadServiceTests
             _downloadQueueMock.Object,
             _serviceProviderMock,
             _csvFileServiceMock.Object,
+            _fileStorageSettingsMock.Object,
             _loggerMock.Object
         );
     }
@@ -63,7 +76,7 @@ public class IIbkrContractIdDownloadServiceTests
         _csvFileServiceMock
             .Setup(f =>
                 f.ReadAsync(
-                    "symbols.csv",
+                    It.Is<string>(x => x == SymbolsFileName),
                     It.IsAny<Func<string[], string>>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -91,7 +104,7 @@ public class IIbkrContractIdDownloadServiceTests
         _csvFileServiceMock
             .Setup(f =>
                 f.WriteAsync(
-                    It.Is<string>(s => s == "symbols_contractIds.csv"),
+                    It.Is<string>(s => s == SymbolsAndContractIdsFileName),
                     It.IsAny<IEnumerable<Symbol>>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -99,7 +112,7 @@ public class IIbkrContractIdDownloadServiceTests
             .Returns(Task.CompletedTask);
 
         // Act
-        var result = await _ibkrContractIdDownloadService.DownloadContractIdsAsync("symbols.csv");
+        var result = await _ibkrContractIdDownloadService.DownloadContractIdsAsync(SymbolsFileName);
 
         // Assert
         result.Should().Be("Retrieved Contract Ids for 2 of 2 symbols");
@@ -107,7 +120,7 @@ public class IIbkrContractIdDownloadServiceTests
         _csvFileServiceMock.Verify(
             f =>
                 f.WriteAsync(
-                    "symbols_contractIds.csv",
+                    It.Is<string>(x => x == SymbolsAndContractIdsFileName),
                     It.Is<List<Symbol>>(l => l.Count == 2),
                     It.IsAny<CancellationToken>()
                 ),
@@ -130,7 +143,7 @@ public class IIbkrContractIdDownloadServiceTests
         _csvFileServiceMock
             .Setup(f =>
                 f.ReadAsync(
-                    It.IsAny<string>(),
+                    It.Is<string>(x => x == SymbolsFileName),
                     It.IsAny<Func<string[], string>>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -161,7 +174,7 @@ public class IIbkrContractIdDownloadServiceTests
         _csvFileServiceMock
             .Setup(f =>
                 f.WriteAsync(
-                    It.IsAny<string>(),
+                    It.Is<string>(x => x == SymbolsAndContractIdsFileName),
                     It.IsAny<IEnumerable<Symbol>>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -169,7 +182,7 @@ public class IIbkrContractIdDownloadServiceTests
             .Returns(Task.CompletedTask);
 
         // Act
-        var result = await _ibkrContractIdDownloadService.DownloadContractIdsAsync("symbols.csv");
+        var result = await _ibkrContractIdDownloadService.DownloadContractIdsAsync(SymbolsFileName);
 
         // Assert
         result.Should().Be("Retrieved Contract Ids for 1 of 2 symbols");
@@ -177,7 +190,7 @@ public class IIbkrContractIdDownloadServiceTests
         _csvFileServiceMock.Verify(
             f =>
                 f.WriteAsync(
-                    "symbols_contractIds.csv",
+                    It.Is<string>(x => x == SymbolsAndContractIdsFileName),
                     It.Is<List<Symbol>>(l => l.Count == 1 && l[0].Name == "AAPL"),
                     It.IsAny<CancellationToken>()
                 ),

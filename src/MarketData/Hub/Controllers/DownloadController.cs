@@ -1,6 +1,8 @@
 namespace QuantLab.MarketData.Hub.Controllers;
 
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using QuantLab.MarketData.Hub.Models.Config;
 using QuantLab.MarketData.Hub.Models.Domain;
 using QuantLab.MarketData.Hub.Services.Interface.Download.Ibkr;
 
@@ -8,26 +10,35 @@ using QuantLab.MarketData.Hub.Services.Interface.Download.Ibkr;
 [Route("api/[controller]")]
 public class DownloadController(
     IIbkrContractIdDownloadService ibkrContractIdDownloadService,
-    IIbkrBarDownloadService ibkrBarDownloadService
+    IIbkrBarDownloadService ibkrBarDownloadService,
+    IOptions<FileStorageSettings> fileStorageSettings
 ) : ControllerBase
 {
     [HttpPost("contractids")]
     public async Task<IActionResult> DownloadContractIds()
     {
-        var message = await ibkrContractIdDownloadService.DownloadContractIdsAsync("symbols.csv");
+        var message = await ibkrContractIdDownloadService.DownloadContractIdsAsync(
+            fileStorageSettings.Value.SymbolsFileName
+        );
         return Ok(new { message });
     }
 
     [HttpPost("bars/{barIntervalParam}")]
     public async Task<IActionResult> DownloadHistoricalBar(string barIntervalParam)
     {
-        return await DownloadHistoricalBar(barIntervalParam, "symbols_contractIds.csv");
+        return await DownloadHistoricalBar(
+            barIntervalParam,
+            fileStorageSettings.Value.SymbolsAndContractIdsFileName
+        );
     }
 
     [HttpPost("bars/{barIntervalParam}/retry")]
     public async Task<IActionResult> DownloadHistoricalBarForRetrySymbols(string barIntervalParam)
     {
-        return await DownloadHistoricalBar(barIntervalParam, "retry_symbols_contractIds.csv");
+        return await DownloadHistoricalBar(
+            barIntervalParam,
+            fileStorageSettings.Value.RetrySymbolsAndContractIdsFileName
+        );
     }
 
     private async Task<IActionResult> DownloadHistoricalBar(

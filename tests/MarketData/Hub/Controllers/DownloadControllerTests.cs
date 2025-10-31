@@ -2,9 +2,11 @@ namespace QuantLab.MarketData.Hub.UnitTests.Controllers;
 
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
 using QuantLab.MarketData.Hub.Controllers;
+using QuantLab.MarketData.Hub.Models.Config;
 using QuantLab.MarketData.Hub.Models.Domain;
 using QuantLab.MarketData.Hub.Services.Interface.Download.Ibkr;
 
@@ -13,16 +15,29 @@ public class DownloadControllerTests
 {
     private Mock<IIbkrContractIdDownloadService> _ibkrContractIdDownloadServiceMock = null!;
     private Mock<IIbkrBarDownloadService> _ibkrBarDownloadServiceMock = null!;
+    private Mock<IOptions<FileStorageSettings>> _fileStorageSettingsMock = null!;
     private DownloadController _downloadController = null!;
+    private const string SymbolsFileName = "sym.csv";
+    private const string SymbolsAndContractIdsFileName = "sym_conIds.csv";
+    private const string RetrySymbolsAndContractIdsFileName = "retry.csv";
 
     [SetUp]
     public void SetUp()
     {
         _ibkrContractIdDownloadServiceMock = new();
         _ibkrBarDownloadServiceMock = new();
+        _fileStorageSettingsMock = new();
+        var fileStorageSettings = new FileStorageSettings
+        {
+            SymbolsFileName = SymbolsFileName,
+            SymbolsAndContractIdsFileName = SymbolsAndContractIdsFileName,
+            RetrySymbolsAndContractIdsFileName = RetrySymbolsAndContractIdsFileName,
+        };
+        _fileStorageSettingsMock.Setup(x => x.Value).Returns(fileStorageSettings);
         _downloadController = new(
             _ibkrContractIdDownloadServiceMock.Object,
-            _ibkrBarDownloadServiceMock.Object
+            _ibkrBarDownloadServiceMock.Object,
+            _fileStorageSettingsMock.Object
         );
     }
 
@@ -40,7 +55,7 @@ public class DownloadControllerTests
 
         okResult!.Value.Should().BeEquivalentTo(new { message = expectedMessage });
         _ibkrContractIdDownloadServiceMock.Verify(
-            m => m.DownloadContractIdsAsync(It.IsAny<string>()),
+            m => m.DownloadContractIdsAsync(It.Is<string>(x => x == SymbolsFileName)),
             Times.Once
         );
     }
@@ -51,7 +66,7 @@ public class DownloadControllerTests
         // Arrange
         const string expectedMessage = "✅ Contract IDs downloaded successfully";
         _ibkrContractIdDownloadServiceMock
-            .Setup(s => s.DownloadContractIdsAsync("symbols.csv"))
+            .Setup(s => s.DownloadContractIdsAsync(It.Is<string>(x => x == SymbolsFileName)))
             .ReturnsAsync(expectedMessage);
 
         // Act
@@ -63,7 +78,7 @@ public class DownloadControllerTests
         okResult!.Value.Should().BeEquivalentTo(new { message = expectedMessage });
 
         _ibkrContractIdDownloadServiceMock.Verify(
-            s => s.DownloadContractIdsAsync("symbols.csv"),
+            s => s.DownloadContractIdsAsync(It.Is<string>(x => x == SymbolsFileName)),
             Times.Once
         );
     }
@@ -75,7 +90,10 @@ public class DownloadControllerTests
         const string expectedMessage = "Bars retrieved successfully";
         _ibkrBarDownloadServiceMock
             .Setup(s =>
-                s.DownloadHistoricalBarAsync(It.IsAny<BarInterval>(), "symbols_contractIds.csv")
+                s.DownloadHistoricalBarAsync(
+                    It.IsAny<BarInterval>(),
+                    It.Is<string>(x => x == SymbolsAndContractIdsFileName)
+                )
             )
             .ReturnsAsync(expectedMessage);
 
@@ -92,7 +110,7 @@ public class DownloadControllerTests
             s =>
                 s.DownloadHistoricalBarAsync(
                     It.Is<BarInterval>(b => b.ToString() == "1m"),
-                    "symbols_contractIds.csv"
+                    It.Is<string>(x => x == SymbolsAndContractIdsFileName)
                 ),
             Times.Once
         );
@@ -147,7 +165,7 @@ public class DownloadControllerTests
             .Setup(s =>
                 s.DownloadHistoricalBarAsync(
                     It.IsAny<BarInterval>(),
-                    "retry_symbols_contractIds.csv"
+                    It.Is<string>(x => x == RetrySymbolsAndContractIdsFileName)
                 )
             )
             .ReturnsAsync(expectedMessage);
@@ -165,7 +183,7 @@ public class DownloadControllerTests
             s =>
                 s.DownloadHistoricalBarAsync(
                     It.Is<BarInterval>(b => b.ToString() == "5m"),
-                    "retry_symbols_contractIds.csv"
+                    It.Is<string>(x => x == RetrySymbolsAndContractIdsFileName)
                 ),
             Times.Once
         );
@@ -178,12 +196,15 @@ public class DownloadControllerTests
         const string expectedMessage = "✅ Bars downloaded internally";
         _ibkrBarDownloadServiceMock
             .Setup(s =>
-                s.DownloadHistoricalBarAsync(It.IsAny<BarInterval>(), "symbols_contractIds.csv")
+                s.DownloadHistoricalBarAsync(
+                    It.IsAny<BarInterval>(),
+                    It.Is<string>(x => x == SymbolsAndContractIdsFileName)
+                )
             )
             .ReturnsAsync(expectedMessage);
 
         // Act
-        var result = await InvokePrivateDownloadHistoricalBar("1h", "symbols_contractIds.csv");
+        var result = await InvokePrivateDownloadHistoricalBar("1h", SymbolsAndContractIdsFileName);
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();

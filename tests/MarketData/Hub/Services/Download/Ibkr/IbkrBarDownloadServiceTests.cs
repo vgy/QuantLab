@@ -9,8 +9,10 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
+using QuantLab.MarketData.Hub.Models.Config;
 using QuantLab.MarketData.Hub.Models.Domain;
 using QuantLab.MarketData.Hub.Models.DTO.Responses;
 using QuantLab.MarketData.Hub.Services.Download.Ibkr;
@@ -23,18 +25,30 @@ public class IbkrBarDownloadServiceTests
 {
     private Mock<IDownloadQueue<ResponseData>> _downloadQueueMock = null!;
     private Mock<ICsvFileService> _csvFileServiceMock = null!;
+    private Mock<IOptions<FileStorageSettings>> _fileStorageSettingsMock = null!;
     private Mock<ILogger<IbkrContractIdDownloadService>> _loggerMock = null!;
     private Mock<IbkrDownloadService> _ibkrDownloadServiceMock = null!;
     private IbkrBarDownloadService _ibkrBarDownloadService = null!;
     private IServiceProvider _serviceProviderMock = null!;
+    private const string SymbolsAndContractIdsFileName = "sym_conIds.csv";
+    private const string RetrySymbolsAndContractIdsFileName = "retry.csv";
+    private const string HistoricalBarsRelativePathTemplate = "{0}\\{0}-{1}.csv";
 
     [SetUp]
     public void SetUp()
     {
-        _downloadQueueMock = new Mock<IDownloadQueue<ResponseData>>();
-        _csvFileServiceMock = new Mock<ICsvFileService>();
-        _loggerMock = new Mock<ILogger<IbkrContractIdDownloadService>>();
-        _ibkrDownloadServiceMock = new Mock<IbkrDownloadService>(null!, null!);
+        _downloadQueueMock = new();
+        _csvFileServiceMock = new();
+        _fileStorageSettingsMock = new();
+        _loggerMock = new();
+        _ibkrDownloadServiceMock = new(null!, null!);
+        var fileStorageSettings = new FileStorageSettings
+        {
+            SymbolsFileName = SymbolsAndContractIdsFileName,
+            RetrySymbolsAndContractIdsFileName = RetrySymbolsAndContractIdsFileName,
+            HistoricalBarsRelativePathTemplate = HistoricalBarsRelativePathTemplate,
+        };
+        _fileStorageSettingsMock.Setup(x => x.Value).Returns(fileStorageSettings);
 
         // Fake ServiceProvider & Scope
         var services = new ServiceCollection();
@@ -45,6 +59,7 @@ public class IbkrBarDownloadServiceTests
             _downloadQueueMock.Object,
             _serviceProviderMock,
             _csvFileServiceMock.Object,
+            _fileStorageSettingsMock.Object,
             _loggerMock.Object
         );
     }
@@ -67,7 +82,7 @@ public class IbkrBarDownloadServiceTests
         _csvFileServiceMock
             .Setup(f =>
                 f.ReadAsync(
-                    "symbols.csv",
+                    It.Is<string>(x => x == SymbolsAndContractIdsFileName),
                     It.IsAny<Func<string[], Symbol>>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -90,7 +105,7 @@ public class IbkrBarDownloadServiceTests
         // Act
         var result = await _ibkrBarDownloadService.DownloadHistoricalBarAsync(
             BarInterval.OneMinute,
-            "symbols.csv"
+            SymbolsAndContractIdsFileName
         );
 
         // Assert
@@ -119,7 +134,7 @@ public class IbkrBarDownloadServiceTests
         _csvFileServiceMock.Verify(
             f =>
                 f.WriteAsync(
-                    "retry_symbols_contractIds.csv",
+                    It.Is<string>(x => x == RetrySymbolsAndContractIdsFileName),
                     It.IsAny<List<Symbol>>(),
                     It.IsAny<CancellationToken>()
                 ),
@@ -138,7 +153,7 @@ public class IbkrBarDownloadServiceTests
         _csvFileServiceMock
             .Setup(f =>
                 f.ReadAsync(
-                    It.IsAny<string>(),
+                    It.Is<string>(x => x == SymbolsAndContractIdsFileName),
                     It.IsAny<Func<string[], Symbol>>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -157,7 +172,7 @@ public class IbkrBarDownloadServiceTests
         // Act
         var result = await _ibkrBarDownloadService.DownloadHistoricalBarAsync(
             BarInterval.FiveMinutes,
-            "symbols.csv"
+            SymbolsAndContractIdsFileName
         );
 
         // Assert
@@ -166,7 +181,7 @@ public class IbkrBarDownloadServiceTests
         _csvFileServiceMock.Verify(
             f =>
                 f.WriteAsync(
-                    "retry_symbols_contractIds.csv",
+                    It.Is<string>(x => x == RetrySymbolsAndContractIdsFileName),
                     It.Is<List<Symbol>>(l => l.Count == 1 && l[0].Name == "RELIANCE"),
                     It.IsAny<CancellationToken>()
                 ),
@@ -182,7 +197,7 @@ public class IbkrBarDownloadServiceTests
         _csvFileServiceMock
             .Setup(f =>
                 f.ReadAsync(
-                    It.IsAny<string>(),
+                    It.Is<string>(x => x == SymbolsAndContractIdsFileName),
                     It.IsAny<Func<string[], Symbol>>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -199,7 +214,7 @@ public class IbkrBarDownloadServiceTests
         // Act
         var result = await _ibkrBarDownloadService.DownloadHistoricalBarAsync(
             BarInterval.OneDay,
-            "symbols.csv"
+            SymbolsAndContractIdsFileName
         );
 
         // Assert
@@ -265,7 +280,7 @@ public class IbkrBarDownloadServiceTests
         _csvFileServiceMock
             .Setup(f =>
                 f.ReadAsync(
-                    It.IsAny<string>(),
+                    It.Is<string>(x => x == SymbolsAndContractIdsFileName),
                     It.IsAny<Func<string[], Symbol>>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -287,7 +302,7 @@ public class IbkrBarDownloadServiceTests
         // Act
         var result = await _ibkrBarDownloadService.DownloadHistoricalBarAsync(
             BarInterval.OneMinute,
-            "symbols.csv"
+            SymbolsAndContractIdsFileName
         );
 
         // Assert
@@ -306,7 +321,7 @@ public class IbkrBarDownloadServiceTests
         _csvFileServiceMock.Verify(
             f =>
                 f.WriteAsync(
-                    "retry_symbols_contractIds.csv",
+                    It.Is<string>(x => x == RetrySymbolsAndContractIdsFileName),
                     It.Is<List<Symbol>>(l =>
                         l.Count == 2
                         && l.Any(s => s.Name == "TCS")
@@ -332,7 +347,7 @@ public class IbkrBarDownloadServiceTests
         _csvFileServiceMock
             .Setup(f =>
                 f.ReadAsync(
-                    It.IsAny<string>(),
+                    It.Is<string>(x => x == SymbolsAndContractIdsFileName),
                     It.IsAny<Func<string[], Symbol>>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -357,7 +372,7 @@ public class IbkrBarDownloadServiceTests
         // Act
         await _ibkrBarDownloadService.DownloadHistoricalBarAsync(
             BarInterval.FiveMinutes,
-            "symbols.csv"
+            SymbolsAndContractIdsFileName
         );
 
         // Assert
@@ -377,7 +392,7 @@ public class IbkrBarDownloadServiceTests
         _csvFileServiceMock
             .Setup(f =>
                 f.ReadAsync(
-                    It.IsAny<string>(),
+                    It.Is<string>(x => x == SymbolsAndContractIdsFileName),
                     It.IsAny<Func<string[], Symbol>>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -391,7 +406,7 @@ public class IbkrBarDownloadServiceTests
         // Act
         var result = await _ibkrBarDownloadService.DownloadHistoricalBarAsync(
             BarInterval.OneDay,
-            "symbols.csv"
+            SymbolsAndContractIdsFileName
         );
 
         // Assert
@@ -400,7 +415,7 @@ public class IbkrBarDownloadServiceTests
         _csvFileServiceMock.Verify(
             f =>
                 f.WriteAsync(
-                    "retry_symbols_contractIds.csv",
+                    It.Is<string>(x => x == RetrySymbolsAndContractIdsFileName),
                     It.Is<List<Symbol>>(list => list.Single().Name == "SBIN"),
                     It.IsAny<CancellationToken>()
                 ),
@@ -419,7 +434,7 @@ public class IbkrBarDownloadServiceTests
         _csvFileServiceMock
             .Setup(f =>
                 f.ReadAsync(
-                    It.IsAny<string>(),
+                    It.Is<string>(x => x == SymbolsAndContractIdsFileName),
                     It.IsAny<Func<string[], Symbol>>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -437,7 +452,7 @@ public class IbkrBarDownloadServiceTests
         // Act
         await _ibkrBarDownloadService.DownloadHistoricalBarAsync(
             BarInterval.OneMinute,
-            "symbols.csv"
+            SymbolsAndContractIdsFileName
         );
 
         // Assert

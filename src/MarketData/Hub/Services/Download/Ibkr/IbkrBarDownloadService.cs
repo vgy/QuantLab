@@ -1,6 +1,8 @@
 namespace QuantLab.MarketData.Hub.Services.Download.Ibkr;
 
 using System.Text.Json;
+using Microsoft.Extensions.Options;
+using QuantLab.MarketData.Hub.Models.Config;
 using QuantLab.MarketData.Hub.Models.Domain;
 using QuantLab.MarketData.Hub.Models.DTO.Responses;
 using QuantLab.MarketData.Hub.Services.Interface.Download;
@@ -11,6 +13,7 @@ public sealed class IbkrBarDownloadService(
     IDownloadQueue<ResponseData> downloadQueue,
     IServiceProvider serviceProvider,
     ICsvFileService fileService,
+    IOptions<FileStorageSettings> fileStorageSettings,
     ILogger<IbkrContractIdDownloadService> logger
 ) : IIbkrBarDownloadService
 {
@@ -18,6 +21,12 @@ public sealed class IbkrBarDownloadService(
     private readonly IServiceProvider _serviceProvider = serviceProvider;
     private readonly ICsvFileService _fileService = fileService;
     private readonly ILogger<IbkrContractIdDownloadService> _logger = logger;
+    private readonly string _retrySymbolsAndContractIdsFileName = fileStorageSettings
+        .Value
+        .RetrySymbolsAndContractIdsFileName;
+    private readonly string _historicalBarsRelativePathTemplate = fileStorageSettings
+        .Value
+        .HistoricalBarsRelativePathTemplate;
     private const string HistEndpoint = "/v1/api/iserver/marketdata/history";
     private const string Exchange = "NSE";
 
@@ -86,15 +95,17 @@ public sealed class IbkrBarDownloadService(
             if (result.Count == 0)
                 continue;
             var bar = result[0];
-            await _fileService.WriteAsync(
-                $"{bar.Interval}\\{bar.Interval}-{bar.Symbol}.csv",
-                result
+            var relativePath = string.Format(
+                _historicalBarsRelativePathTemplate,
+                bar.Interval,
+                bar.Symbol
             );
+            await _fileService.WriteAsync(relativePath, result);
         }
 
         var matchedKeys = results.Select(t => t[0].Symbol).ToHashSet();
         var unavailableSymbols = symbols.Where(x => !matchedKeys.Contains(x.Name)).ToList();
-        await _fileService.WriteAsync($"retry_symbols_contractIds.csv", unavailableSymbols);
+        await _fileService.WriteAsync(_retrySymbolsAndContractIdsFileName, unavailableSymbols);
         return $"Retrieved Historical Bars of {barInterval.ToString()} for {results.Count} of {symbols.Count()} symbols";
     }
 

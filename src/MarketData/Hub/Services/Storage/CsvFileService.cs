@@ -2,20 +2,17 @@ namespace QuantLab.MarketData.Hub.Services.Storage;
 
 using System.IO;
 using System.Text;
+using Microsoft.Extensions.Options;
+using QuantLab.MarketData.Hub.Models.Config;
 using QuantLab.MarketData.Hub.Services.Interface.Storage;
 
-public class CsvFileService : ICsvFileService
+public class CsvFileService(
+    IOptions<FileStorageSettings> fileStorageSettings,
+    ILogger<CsvFileService> logger
+) : ICsvFileService
 {
-    private readonly string _basePath;
-    private readonly ILogger<CsvFileService> _logger;
-    private readonly IConfiguration _configuration;
-
-    public CsvFileService(IConfiguration configuration, ILogger<CsvFileService> logger)
-    {
-        _configuration = configuration;
-        _basePath = _configuration["DataFiles:BasePath"]!;
-        _logger = logger;
-    }
+    private readonly string _directory = fileStorageSettings.Value.Directory;
+    private readonly ILogger<CsvFileService> _logger = logger;
 
     public async Task WriteAsync<T>(
         string fileName,
@@ -50,7 +47,7 @@ public class CsvFileService : ICsvFileService
             sb.AppendLine(string.Join(",", values));
         }
 
-        var filePath = Path.Combine(_basePath, fileName);
+        var filePath = Path.Combine(_directory, fileName);
         // Ensure directory exists
         var directory = Path.GetDirectoryName(filePath);
         if (!string.IsNullOrWhiteSpace(directory))
@@ -72,7 +69,7 @@ public class CsvFileService : ICsvFileService
 
         _logger.LogInformation("Reading CSV file from {fileName}", fileName);
 
-        var filePath = Path.Combine(_basePath, fileName);
+        var filePath = Path.Combine(_directory, fileName);
         if (!File.Exists(filePath))
         {
             _logger.LogWarning("CSV file not found at {filePath}", filePath);

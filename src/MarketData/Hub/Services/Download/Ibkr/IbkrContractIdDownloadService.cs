@@ -2,6 +2,8 @@ namespace QuantLab.MarketData.Hub.Services.Download.Ibkr;
 
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using QuantLab.MarketData.Hub.Models.Config;
 using QuantLab.MarketData.Hub.Models.Domain;
 using QuantLab.MarketData.Hub.Models.DTO.Responses;
 using QuantLab.MarketData.Hub.Services.Interface.Download;
@@ -12,17 +14,21 @@ public sealed class IbkrContractIdDownloadService(
     IDownloadQueue<ResponseData> downloadQueue,
     IServiceProvider serviceProvider,
     ICsvFileService fileService,
+    IOptions<FileStorageSettings> fileStorageSettings,
     ILogger<IbkrContractIdDownloadService> logger
 ) : IIbkrContractIdDownloadService
 {
-    private readonly IServiceProvider serviceProvider = serviceProvider;
-    private readonly ILogger<IbkrContractIdDownloadService> logger = logger;
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
+    private readonly ILogger<IbkrContractIdDownloadService> _logger = logger;
+    private readonly string _symbolsAndContractIdsFileName = fileStorageSettings
+        .Value
+        .SymbolsAndContractIdsFileName;
 
     public async Task<string> DownloadContractIdsAsync(string file)
     {
         var symbols = await fileService.ReadAsync(file, a => a[0]);
 
-        using var scope = serviceProvider.CreateScope();
+        using var scope = _serviceProvider.CreateScope();
         var ibkrDownloadService = scope.ServiceProvider.GetRequiredService<IbkrDownloadService>();
         var tasks = new List<Task<ResponseData>>();
         foreach (var symbol in symbols)
@@ -30,14 +36,14 @@ public sealed class IbkrContractIdDownloadService(
             var path = $"v1/api/trsrv/futures?symbols={symbol}&exchange=NSE";
             var task = downloadQueue.QueueAsync(async token =>
             {
-                logger.LogInformation("📥 Queued job for {symbol}", symbol);
+                _logger.LogInformation("📥 Queued job for {symbol}", symbol);
                 return await ibkrDownloadService.DownloadAsync(symbol, path, token);
             });
 
             tasks.Add(task);
         }
 
-        logger.LogInformation("✅ All {count} jobs queued", tasks.Count);
+        _logger.LogInformation("✅ All {count} jobs queued", tasks.Count);
 
         var responseDatas = await Task.WhenAll(tasks);
 
@@ -46,20 +52,20 @@ public sealed class IbkrContractIdDownloadService(
             .OfType<Symbol>() // filters nulls
             .ToList();
 
-        await fileService.WriteAsync("symbols_contractIds.csv", results);
+        await fileService.WriteAsync(_symbolsAndContractIdsFileName, results);
         return $"Retrieved Contract Ids for {results.Count} of {symbols.Count()} symbols";
     }
 
     private Symbol? ParseResponseData(ResponseData responseData)
     {
-        logger.LogInformation(
+        _logger.LogInformation(
             "✅ Received result for {symbol}, data count: {count}",
             responseData.Symbol,
             responseData.Data.Count
         );
         if (responseData.Data.Count == 0)
         {
-            logger.LogError("Parse error for {symbol}: Data.Count is 0", responseData.Symbol);
+            _logger.LogError("Parse error for {symbol}: Data.Count is 0", responseData.Symbol);
             return null;
         }
 
@@ -71,7 +77,7 @@ public sealed class IbkrContractIdDownloadService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Parse error for {symbol}", responseData.Symbol);
+            _logger.LogError(ex, "Parse error for {symbol}", responseData.Symbol);
         }
         return null;
     }

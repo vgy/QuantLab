@@ -4,25 +4,28 @@ using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
+using QuantLab.MarketData.Hub.Models.Config;
 using QuantLab.MarketData.Hub.Services.Interface.Storage;
 using QuantLab.MarketData.Hub.Services.Storage;
 
 public class CsvFileServiceTests
 {
     private ICsvFileService _service = default!;
+    private Mock<IOptions<FileStorageSettings>> _fileStorageSettingsMock = null!;
     private Mock<ILogger<CsvFileService>> _mockLogger = default!;
-    private Mock<IConfiguration> _mockConfiguration = default!;
     private readonly string tempFilePath = Path.GetTempPath();
 
     [SetUp]
     public void SetUp()
     {
         _mockLogger = new Mock<ILogger<CsvFileService>>();
-        _mockConfiguration = new Mock<IConfiguration>();
-        _mockConfiguration.Setup(c => c["DataFiles:BasePath"]).Returns(tempFilePath);
-        _service = new CsvFileService(_mockConfiguration.Object, _mockLogger.Object);
+        _fileStorageSettingsMock = new();
+        var fileStorageSettings = new FileStorageSettings { Directory = tempFilePath };
+        _fileStorageSettingsMock.Setup(x => x.Value).Returns(fileStorageSettings);
+        _service = new CsvFileService(_fileStorageSettingsMock.Object, _mockLogger.Object);
     }
 
     [Test]

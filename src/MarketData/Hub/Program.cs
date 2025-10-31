@@ -12,6 +12,9 @@ using QuantLab.MarketData.Hub.Services.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.Configure<FileStorageSettings>(
+    builder.Configuration.GetSection(FileStorageSettings.SectionName)
+);
 builder.Services.Configure<IbkrApiSettings>(
     builder.Configuration.GetSection(IbkrApiSettings.SectionName)
 );
