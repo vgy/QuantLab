@@ -43,4 +43,23 @@ internal static class LoggerMoqExtensions
             times
         );
     }
+
+    public static void VerifyLog<T>(
+        this Mock<ILogger<T>> logger,
+        LogLevel expectedLevel,
+        string containsMessage
+    )
+    {
+        logger.Verify(
+            x =>
+                x.Log(
+                    It.Is<LogLevel>(l => l == expectedLevel),
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains(containsMessage)),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                ),
+            Times.AtLeastOnce
+        );
+    }
 }

@@ -31,6 +31,7 @@ builder.Services.AddSingleton(typeof(IDownloadQueue<>), typeof(DownloadQueue<>))
 builder.Services.AddHostedService<DownloadBackgroundService<ResponseData>>();
 builder.Services.AddSingleton<IMarketDataService, MarketDataService>();
 builder.Services.AddSingleton<IIbkrContractIdDownloadService, IbkrContractIdDownloadService>();
+builder.Services.AddSingleton<IIbkrBarDownloadService, IbkrBarDownloadService>();
 
 builder
     .Services.AddHttpClient<IbkrDownloadService>(

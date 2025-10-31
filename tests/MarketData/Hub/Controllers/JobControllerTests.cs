@@ -2,7 +2,6 @@ namespace QuantLab.MarketData.Hub.UnitTests.Controllers;
 
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
 using QuantLab.MarketData.Hub.Controllers;
@@ -14,6 +13,7 @@ public class JobControllerTests
 {
     private Mock<IMarketDataService> _marketMock = null!;
     private Mock<IIbkrContractIdDownloadService> _ibkrContractIdDownloadServiceMock = null!;
+    private Mock<IIbkrBarDownloadService> _ibkrBarDownloadServiceMock = null!;
     private JobController _controller = null!;
 
     [SetUp]
@@ -21,7 +21,12 @@ public class JobControllerTests
     {
         _marketMock = new();
         _ibkrContractIdDownloadServiceMock = new();
-        _controller = new(_marketMock.Object, _ibkrContractIdDownloadServiceMock.Object);
+        _ibkrBarDownloadServiceMock = new();
+        _controller = new(
+            _marketMock.Object,
+            _ibkrContractIdDownloadServiceMock.Object,
+            _ibkrBarDownloadServiceMock.Object
+        );
     }
 
     [Test]
