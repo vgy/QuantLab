@@ -26,6 +26,7 @@ public class IbkrBarDownloadServiceTests
     private Mock<IDownloadQueue<ResponseData>> _downloadQueueMock = null!;
     private Mock<ICsvFileService> _csvFileServiceMock = null!;
     private Mock<IOptions<FileStorageSettings>> _fileStorageSettingsMock = null!;
+    private Mock<IOptions<IbkrApiSettings>> _ibkrApiSettingsMock = null!;
     private Mock<ILogger<IbkrContractIdDownloadService>> _loggerMock = null!;
     private Mock<IbkrDownloadService> _ibkrDownloadServiceMock = null!;
     private IbkrBarDownloadService _ibkrBarDownloadService = null!;
@@ -33,6 +34,7 @@ public class IbkrBarDownloadServiceTests
     private const string SymbolsAndContractIdsFileName = "sym_conIds.csv";
     private const string RetrySymbolsAndContractIdsFileName = "retry.csv";
     private const string HistoricalBarsRelativePathTemplate = "{0}\\{0}-{1}.csv";
+    private const string HistoricalMarketDataEndPoint = "/marketdata/history";
 
     [SetUp]
     public void SetUp()
@@ -40,6 +42,7 @@ public class IbkrBarDownloadServiceTests
         _downloadQueueMock = new();
         _csvFileServiceMock = new();
         _fileStorageSettingsMock = new();
+        _ibkrApiSettingsMock = new();
         _loggerMock = new();
         _ibkrDownloadServiceMock = new(null!, null!);
         var fileStorageSettings = new FileStorageSettings
@@ -49,6 +52,11 @@ public class IbkrBarDownloadServiceTests
             HistoricalBarsRelativePathTemplate = HistoricalBarsRelativePathTemplate,
         };
         _fileStorageSettingsMock.Setup(x => x.Value).Returns(fileStorageSettings);
+        var ibkrApiSettings = new IbkrApiSettings
+        {
+            HistoricalMarketDataEndPoint = HistoricalMarketDataEndPoint,
+        };
+        _ibkrApiSettingsMock.Setup(x => x.Value).Returns(ibkrApiSettings);
 
         // Fake ServiceProvider & Scope
         var services = new ServiceCollection();
@@ -60,6 +68,7 @@ public class IbkrBarDownloadServiceTests
             _serviceProviderMock,
             _csvFileServiceMock.Object,
             _fileStorageSettingsMock.Object,
+            _ibkrApiSettingsMock.Object,
             _loggerMock.Object
         );
     }
@@ -467,22 +476,22 @@ public class IbkrBarDownloadServiceTests
             yield return new TestCaseData(
                 101,
                 BarInterval.OneMinute,
-                "/v1/api/iserver/marketdata/history?conid=101&exchange=NSE&period=1d&bar=1min"
+                $"{HistoricalMarketDataEndPoint}?conid=101&exchange=NSE&period=1d&bar=1min"
             );
             yield return new TestCaseData(
                 202,
                 BarInterval.FiveMinutes,
-                "/v1/api/iserver/marketdata/history?conid=202&exchange=NSE&period=2d&bar=5min"
+                $"{HistoricalMarketDataEndPoint}?conid=202&exchange=NSE&period=2d&bar=5min"
             );
             yield return new TestCaseData(
                 303,
                 BarInterval.OneHour,
-                "/v1/api/iserver/marketdata/history?conid=303&exchange=NSE&period=1m&bar=1h"
+                $"{HistoricalMarketDataEndPoint}?conid=303&exchange=NSE&period=1m&bar=1h"
             );
             yield return new TestCaseData(
                 404,
                 BarInterval.OneDay,
-                "/v1/api/iserver/marketdata/history?conid=404&exchange=NSE&period=1y&bar=1d"
+                $"{HistoricalMarketDataEndPoint}?conid=404&exchange=NSE&period=1y&bar=1d"
             );
         }
     }
@@ -505,13 +514,13 @@ public class IbkrBarDownloadServiceTests
         return doc.RootElement.Clone();
     }
 
-    private static string InvokeBuildUrl(int conId, BarInterval interval, string? startTime = null)
+    private string InvokeBuildUrl(int conId, BarInterval interval, string? startTime = null)
     {
         var method = typeof(IbkrBarDownloadService).GetMethod(
             "BuildUrl",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
         )!;
-        return (string)method.Invoke(null, [conId, interval, startTime])!;
+        return (string)method.Invoke(_ibkrBarDownloadService, [conId, interval, startTime])!;
     }
 
     private List<Bar> InvokeParseResponseData(BarInterval interval, ResponseData response)

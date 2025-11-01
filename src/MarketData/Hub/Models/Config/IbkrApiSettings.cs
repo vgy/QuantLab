@@ -7,4 +7,6 @@ public sealed class IbkrApiSettings
     public string UserAgent { get; set; } = "MyApp/1.0";
     public string Accept { get; set; } = "application/json";
     public bool BypassSsl { get; set; } = false;
+    public string HistoricalMarketDataEndPoint { get; set; } = string.Empty;
+    public string FuturesContractIdEndPoint { get; set; } = string.Empty;
 }

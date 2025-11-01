@@ -14,6 +14,7 @@ public sealed class IbkrBarDownloadService(
     IServiceProvider serviceProvider,
     ICsvFileService fileService,
     IOptions<FileStorageSettings> fileStorageSettings,
+    IOptions<IbkrApiSettings> ibkrApiSettings,
     ILogger<IbkrContractIdDownloadService> logger
 ) : IIbkrBarDownloadService
 {
@@ -27,7 +28,9 @@ public sealed class IbkrBarDownloadService(
     private readonly string _historicalBarsRelativePathTemplate = fileStorageSettings
         .Value
         .HistoricalBarsRelativePathTemplate;
-    private const string HistEndpoint = "/v1/api/iserver/marketdata/history";
+    private readonly string _historicalMarketDataEndPoint = ibkrApiSettings
+        .Value
+        .HistoricalMarketDataEndPoint;
     private const string Exchange = "NSE";
 
     public async Task<string> DownloadHistoricalBarAsync(
@@ -109,7 +112,7 @@ public sealed class IbkrBarDownloadService(
         return $"Retrieved Historical Bars of {barInterval.ToString()} for {results.Count} of {symbols.Count()} symbols";
     }
 
-    private static string BuildUrl(int conId, BarInterval barInterval, string? startTime = null)
+    private string BuildUrl(int conId, BarInterval barInterval, string? startTime = null)
     {
         (string period, string bar) = barInterval.ToString() switch
         {
@@ -135,7 +138,7 @@ public sealed class IbkrBarDownloadService(
             query.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}")
         );
 
-        return $"{HistEndpoint}?{queryString}";
+        return $"{_historicalMarketDataEndPoint}?{queryString}";
     }
 
     private List<Bar> ParseResponseData(BarInterval barInterval, ResponseData responseData)

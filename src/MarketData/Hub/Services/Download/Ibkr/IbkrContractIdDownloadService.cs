@@ -15,6 +15,7 @@ public sealed class IbkrContractIdDownloadService(
     IServiceProvider serviceProvider,
     ICsvFileService fileService,
     IOptions<FileStorageSettings> fileStorageSettings,
+    IOptions<IbkrApiSettings> ibkrApiSettings,
     ILogger<IbkrContractIdDownloadService> logger
 ) : IIbkrContractIdDownloadService
 {
@@ -23,6 +24,10 @@ public sealed class IbkrContractIdDownloadService(
     private readonly string _symbolsAndContractIdsFileName = fileStorageSettings
         .Value
         .SymbolsAndContractIdsFileName;
+    private readonly string _futuresContractIdEndPoint = ibkrApiSettings
+        .Value
+        .FuturesContractIdEndPoint;
+    private const string Exchange = "NSE";
 
     public async Task<string> DownloadContractIdsAsync(string file)
     {
@@ -33,7 +38,7 @@ public sealed class IbkrContractIdDownloadService(
         var tasks = new List<Task<ResponseData>>();
         foreach (var symbol in symbols)
         {
-            var path = $"v1/api/trsrv/futures?symbols={symbol}&exchange=NSE";
+            var path = string.Format(_futuresContractIdEndPoint, symbol, Exchange);
             var task = downloadQueue.QueueAsync(async token =>
             {
                 _logger.LogInformation("📥 Queued job for {symbol}", symbol);

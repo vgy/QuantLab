@@ -22,6 +22,7 @@ public class IIbkrContractIdDownloadServiceTests
     private Mock<ICsvFileService> _csvFileServiceMock = null!;
     private Mock<IbkrDownloadService> _ibkrDownloadServiceMock = null!;
     private Mock<IOptions<FileStorageSettings>> _fileStorageSettingsMock = null!;
+    private Mock<IOptions<IbkrApiSettings>> _ibkrApiSettingsMock = null!;
     private Mock<ILogger<IbkrContractIdDownloadService>> _loggerMock = null!;
 
     private IbkrContractIdDownloadService _ibkrContractIdDownloadService = null!;
@@ -29,6 +30,7 @@ public class IIbkrContractIdDownloadServiceTests
     private IServiceProvider _serviceProviderMock = null!;
     private const string SymbolsFileName = "sym.csv";
     private const string SymbolsAndContractIdsFileName = "sym_conIds.csv";
+    private const string FuturesContractIdEndPoint = "/futures/contractId?symbols={0}&exchange={1}";
 
     [SetUp]
     public void SetUp()
@@ -37,6 +39,7 @@ public class IIbkrContractIdDownloadServiceTests
         _csvFileServiceMock = new Mock<ICsvFileService>();
         _ibkrDownloadServiceMock = new Mock<IbkrDownloadService>(null!, null!);
         _fileStorageSettingsMock = new();
+        _ibkrApiSettingsMock = new();
         _loggerMock = new Mock<ILogger<IbkrContractIdDownloadService>>();
         var fileStorageSettings = new FileStorageSettings
         {
@@ -44,6 +47,11 @@ public class IIbkrContractIdDownloadServiceTests
             SymbolsAndContractIdsFileName = SymbolsAndContractIdsFileName,
         };
         _fileStorageSettingsMock.Setup(x => x.Value).Returns(fileStorageSettings);
+        var ibkrApiSettings = new IbkrApiSettings
+        {
+            FuturesContractIdEndPoint = FuturesContractIdEndPoint,
+        };
+        _ibkrApiSettingsMock.Setup(x => x.Value).Returns(ibkrApiSettings);
 
         // Fake ServiceProvider & Scope
         var services = new ServiceCollection();
@@ -55,6 +63,7 @@ public class IIbkrContractIdDownloadServiceTests
             _serviceProviderMock,
             _csvFileServiceMock.Object,
             _fileStorageSettingsMock.Object,
+            _ibkrApiSettingsMock.Object,
             _loggerMock.Object
         );
     }
