@@ -2,18 +2,16 @@ namespace QuantLab.MarketData.Hub.UnitTests.Services.Storage;
 
 using System.IO;
 using System.Linq;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
 using QuantLab.MarketData.Hub.Models.Config;
-using QuantLab.MarketData.Hub.Services.Interface.Storage;
 using QuantLab.MarketData.Hub.Services.Storage;
 
 public class CsvFileServiceTests
 {
-    private ICsvFileService _service = default!;
+    private CsvFileService _service = default!;
     private Mock<IOptions<FileStorageSettings>> _fileStorageSettingsMock = null!;
     private Mock<ILogger<CsvFileService>> _mockLogger = default!;
     private readonly string tempFilePath = Path.GetTempPath();
@@ -21,7 +19,7 @@ public class CsvFileServiceTests
     [SetUp]
     public void SetUp()
     {
-        _mockLogger = new Mock<ILogger<CsvFileService>>();
+        _mockLogger = new();
         _fileStorageSettingsMock = new();
         var fileStorageSettings = new FileStorageSettings { Directory = tempFilePath };
         _fileStorageSettingsMock.Setup(x => x.Value).Returns(fileStorageSettings);
@@ -38,6 +36,20 @@ public class CsvFileServiceTests
         // Act & Assert
         Assert.ThrowsAsync<ArgumentNullException>(async () =>
             await _service.WriteAsync(filePath!, records)
+        );
+    }
+
+    [TestCase("")]
+    [TestCase(" ")]
+    [TestCase("   ")]
+    public void WriteAsync_EmptyFilePath_ThrowsArgumentException(string fileName)
+    {
+        // Arrange
+        var records = new[] { new { A = 1, B = "x" } };
+
+        // Act & Assert
+        Assert.ThrowsAsync<ArgumentException>(async () =>
+            await _service.WriteAsync(fileName, records)
         );
     }
 
@@ -96,6 +108,17 @@ public class CsvFileServiceTests
         // Act & Assert
         Assert.ThrowsAsync<ArgumentNullException>(async () =>
             await _service.ReadAsync<TestRecord>(filePath!, cols => new TestRecord())
+        );
+    }
+
+    [TestCase("")]
+    [TestCase(" ")]
+    [TestCase("   ")]
+    public void ReadAsync_EmptyFilePath_ThrowsArgumentException(string fileName)
+    {
+        // Arrange & Act & Assert
+        Assert.ThrowsAsync<ArgumentException>(async () =>
+            await _service.ReadAsync<TestRecord>(fileName, cols => new TestRecord())
         );
     }
 

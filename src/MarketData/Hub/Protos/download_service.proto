@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option csharp_namespace = "QuantLab.Protos.MarketData";
+
+package quantlab.protos.marketdata;
+
+service DownloadGrpc {
+  rpc DownloadContractIds (Empty) returns (StatusReply);
+  rpc DownloadHistoricalBars (HistoricalBarsRequest) returns (StatusReply);
+  rpc DownloadHistoricalBarsForMissedSymbols (HistoricalBarsRequest) returns (StatusReply);
+}
+
+message Empty {}
+
+message HistoricalBarsRequest {
+  string barInterval = 1;
+}
+
+message StatusReply {
+  string message = 1;
+}

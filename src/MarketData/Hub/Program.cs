@@ -73,7 +73,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.MapControllers();
-app.MapGrpcService<JobGrpcService>();
+app.MapGrpcService<DownloadGrpcService>();
 app.MapGet("/", () => "Use /api/* for REST or gRPC endpoints for structured calls.");
 
 app.Run();

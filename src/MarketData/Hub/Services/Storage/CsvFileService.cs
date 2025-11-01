@@ -20,7 +20,7 @@ public class CsvFileService(
         CancellationToken cancellationToken = default
     )
     {
-        ArgumentNullException.ThrowIfNull(fileName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
         ArgumentNullException.ThrowIfNull(records);
 
         _logger.LogInformation(
@@ -64,7 +64,7 @@ public class CsvFileService(
         CancellationToken cancellationToken = default
     )
     {
-        ArgumentNullException.ThrowIfNull(fileName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
         ArgumentNullException.ThrowIfNull(mapFunc);
 
         _logger.LogInformation("Reading CSV file from {fileName}", fileName);
