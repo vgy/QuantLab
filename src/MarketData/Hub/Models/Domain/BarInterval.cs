@@ -40,12 +40,15 @@ public sealed record BarInterval
         ]
     );
 
-    public static IReadOnlyList<BarInterval> All => _all;
-
     private static readonly Dictionary<string, BarInterval> _bySymbol = _all.ToDictionary(
         x => x.Symbol,
         StringComparer.OrdinalIgnoreCase
     );
+
+    private static readonly IReadOnlyList<BarInterval> _validFetchIntervals =
+        new ReadOnlyCollection<BarInterval>([FiveMinutes, OneHour, OneDay]);
+
+    public static IReadOnlyList<BarInterval> All => _all;
 
     public static bool TryParse(string? symbol, out BarInterval? interval)
     {
@@ -56,6 +59,18 @@ public sealed record BarInterval
         }
 
         return _bySymbol.TryGetValue(symbol, out interval);
+    }
+
+    public static bool IsValidFetchInterval(BarInterval interval) =>
+        _validFetchIntervals.Contains(interval);
+
+    public static (bool IsValid, BarInterval? BarInterval) GetFetchInterval(string interval)
+    {
+        if (!TryParse(interval, out BarInterval? barInterval))
+        {
+            return (false, null);
+        }
+        return _validFetchIntervals.Contains(barInterval) ? (true, barInterval) : (false, null);
     }
 
     public override string ToString() => Symbol;

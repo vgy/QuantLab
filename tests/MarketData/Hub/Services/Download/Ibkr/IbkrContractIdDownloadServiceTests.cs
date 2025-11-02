@@ -16,7 +16,7 @@ using QuantLab.MarketData.Hub.Services.Interface.Storage;
 using QuantLab.MarketData.Hub.UnitTests;
 
 [TestFixture]
-public class IIbkrContractIdDownloadServiceTests
+public class IbkrContractIdDownloadServiceTests
 {
     private Mock<IDownloadQueue<ResponseData>> _downloadQueueMock = null!;
     private Mock<ICsvFileService> _csvFileServiceMock = null!;

@@ -1,6 +1,7 @@
 namespace QuantLab.MarketData.Hub.UnitTests.Models.Domain;
 
 using System.Collections.Generic;
+using FluentAssertions;
 using NUnit.Framework;
 using QuantLab.MarketData.Hub.Models.Domain;
 
@@ -177,6 +178,33 @@ public class BarIntervalTests
         {
             Assert.That(interval, Is.Null);
         }
+    }
+
+    [TestCase("1m", false)]
+    [TestCase("5m", true)]
+    [TestCase("15m", false)]
+    [TestCase("30m", false)]
+    [TestCase("1h", true)]
+    [TestCase("4h", false)]
+    [TestCase("6h", false)]
+    [TestCase("1d", true)]
+    [TestCase("1w", false)]
+    [TestCase("1M", false)] // case-insensitive
+    [TestCase("unknown", false)]
+    [TestCase("", false)]
+    [TestCase(null, false)]
+    public void GetFetchInterval_Symbol_ReturnsExpectedResult(string? interval, bool expectedResult)
+    {
+        // Arrange
+        _ = BarInterval.TryParse(interval, out BarInterval? barInterval);
+
+        // Act
+        var result = BarInterval.GetFetchInterval(interval!);
+
+        // Assert
+        result.IsValid.Should().Be(expectedResult);
+        if (expectedResult)
+            result.BarInterval.Should().Be(barInterval);
     }
 
     [Test]

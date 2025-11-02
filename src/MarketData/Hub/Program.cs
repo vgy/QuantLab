@@ -5,8 +5,10 @@ using QuantLab.MarketData.Hub.Models.DTO.Responses;
 using QuantLab.MarketData.Hub.Services;
 using QuantLab.MarketData.Hub.Services.Download;
 using QuantLab.MarketData.Hub.Services.Download.Ibkr;
+using QuantLab.MarketData.Hub.Services.Fetch;
 using QuantLab.MarketData.Hub.Services.Interface.Download;
 using QuantLab.MarketData.Hub.Services.Interface.Download.Ibkr;
+using QuantLab.MarketData.Hub.Services.Interface.Fetch;
 using QuantLab.MarketData.Hub.Services.Interface.Storage;
 using QuantLab.MarketData.Hub.Services.Storage;
 
@@ -35,6 +37,7 @@ builder.Services.AddHostedService<DownloadBackgroundService<ResponseData>>();
 builder.Services.AddSingleton<IMarketDataService, MarketDataService>();
 builder.Services.AddSingleton<IIbkrContractIdDownloadService, IbkrContractIdDownloadService>();
 builder.Services.AddSingleton<IIbkrBarDownloadService, IbkrBarDownloadService>();
+builder.Services.AddSingleton<IMarketDataFetchService, MarketDataFetchService>();
 
 builder
     .Services.AddHttpClient<IbkrDownloadService>(
