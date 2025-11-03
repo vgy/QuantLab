@@ -18,7 +18,7 @@ public sealed class MarketDataFetchService(
         .HistoricalBarsRelativePathTemplate;
     private readonly ILogger<MarketDataFetchService> logger = logger;
 
-    public async Task<IReadOnlyList<Bar>> GetDataAsync(string symbol, BarInterval barInterval)
+    public async Task<IReadOnlyList<Bar>> GetMarketDataAsync(string symbol, BarInterval barInterval)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(symbol);
         ArgumentNullException.ThrowIfNull(barInterval);

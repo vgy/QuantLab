@@ -4,5 +4,5 @@ namespace QuantLab.MarketData.Hub.Services.Interface.Fetch;
 
 public interface IMarketDataFetchService
 {
-    Task<IReadOnlyList<Bar>> GetDataAsync(string symbol, BarInterval barInterval);
+    Task<IReadOnlyList<Bar>> GetMarketDataAsync(string symbol, BarInterval barInterval);
 }

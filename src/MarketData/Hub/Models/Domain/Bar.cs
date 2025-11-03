@@ -1,6 +1,6 @@
 namespace QuantLab.MarketData.Hub.Models.Domain;
 
-public record struct Bar(
+public readonly record struct Bar(
     string Symbol,
     BarInterval Interval,
     long Timestamp,

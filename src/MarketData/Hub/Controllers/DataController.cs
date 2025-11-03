@@ -21,7 +21,7 @@ public sealed class DataController(IMarketDataFetchService marketDataFetchServic
         if (!result.IsValid)
             return BadRequest("Bar Interval is invalid to fetch.");
 
-        var message = await marketDataFetchService.GetDataAsync(symbol, result.BarInterval!);
+        var message = await marketDataFetchService.GetMarketDataAsync(symbol, result.BarInterval!);
         return Ok(new { message });
     }
 }

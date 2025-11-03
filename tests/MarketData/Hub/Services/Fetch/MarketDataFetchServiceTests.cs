@@ -73,7 +73,7 @@ public class MarketDataFetchServiceTests
             .ReturnsAsync(expectedResult);
 
         // Act
-        var result = await _marketDataFetchService.GetDataAsync(symbol, interval!);
+        var result = await _marketDataFetchService.GetMarketDataAsync(symbol, interval!);
 
         // Assert
         result.Should().BeEquivalentTo(expectedResult, options => options.WithStrictOrdering());
@@ -100,7 +100,7 @@ public class MarketDataFetchServiceTests
     {
         // Act && Assert
         Assert.ThrowsAsync<ArgumentNullException>(async () =>
-            await _marketDataFetchService.GetDataAsync(null!, BarInterval.OneDay)
+            await _marketDataFetchService.GetMarketDataAsync(null!, BarInterval.OneDay)
         );
         _csvFileServiceMock.VerifyNoOtherCalls();
     }
@@ -111,7 +111,10 @@ public class MarketDataFetchServiceTests
     {
         // Act && Assert
         Assert.ThrowsAsync<ArgumentException>(async () =>
-            await _marketDataFetchService.GetDataAsync(missingSymbolParam, BarInterval.OneHour)
+            await _marketDataFetchService.GetMarketDataAsync(
+                missingSymbolParam,
+                BarInterval.OneHour
+            )
         );
         _csvFileServiceMock.VerifyNoOtherCalls();
     }
@@ -121,7 +124,7 @@ public class MarketDataFetchServiceTests
     {
         // Act && Assert
         Assert.ThrowsAsync<ArgumentNullException>(async () =>
-            await _marketDataFetchService.GetDataAsync("ABC", null!)
+            await _marketDataFetchService.GetMarketDataAsync("ABC", null!)
         );
         _csvFileServiceMock.VerifyNoOtherCalls();
     }
@@ -148,7 +151,7 @@ public class MarketDataFetchServiceTests
             .ReturnsAsync([]);
 
         // Act
-        var result = await _marketDataFetchService.GetDataAsync(symbol, interval!);
+        var result = await _marketDataFetchService.GetMarketDataAsync(symbol, interval!);
 
         // Assert
         result.Should().BeEmpty();
@@ -192,7 +195,7 @@ public class MarketDataFetchServiceTests
             .Throws<Exception>();
 
         // Act
-        var result = await _marketDataFetchService.GetDataAsync(symbol, interval!);
+        var result = await _marketDataFetchService.GetMarketDataAsync(symbol, interval!);
 
         // Assert
         result.Should().BeEmpty();

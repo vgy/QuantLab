@@ -15,5 +15,6 @@
   </ItemGroup>
   <ItemGroup>
     <Protobuf Include="Protos\download_service.proto" GrpcServices="Server" />
+    <Protobuf Include="Protos\marketdata_service.proto" GrpcServices="Server" />
   </ItemGroup>
 </Project>

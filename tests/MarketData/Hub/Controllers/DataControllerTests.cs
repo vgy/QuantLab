@@ -47,7 +47,7 @@ public class DataControllerTests
         ];
         _marketDataFetchServiceMock
             .Setup(s =>
-                s.GetDataAsync(
+                s.GetMarketDataAsync(
                     It.Is<string>(x => x == symbol),
                     It.Is<BarInterval>(b => b.ToString() == barInterval)
                 )
@@ -68,7 +68,7 @@ public class DataControllerTests
 
         _marketDataFetchServiceMock.Verify(
             s =>
-                s.GetDataAsync(
+                s.GetMarketDataAsync(
                     It.Is<string>(x => x == symbol),
                     It.Is<BarInterval>(b => b.ToString() == barInterval)
                 ),

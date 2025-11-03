@@ -77,6 +77,7 @@ app.UseHttpsRedirection();
 
 app.MapControllers();
 app.MapGrpcService<DownloadGrpcService>();
+app.MapGrpcService<MarketDataGrpcService>();
 app.MapGet("/", () => "Use /api/* for REST or gRPC endpoints for structured calls.");
 
 app.Run();
