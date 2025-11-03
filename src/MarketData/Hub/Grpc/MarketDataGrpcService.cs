@@ -30,7 +30,9 @@ public class MarketDataGrpcService(IMarketDataFetchService marketDataFetchServic
             result.BarInterval!
         );
         var barsSpan = CollectionsMarshal.AsSpan([.. bars]);
-        var response = new MarketDataResponse { Message = "Successfully fetched market data" };
+        var message =
+            $"Fetched {bars.Count} records for {request.Interval} interval of {request.Symbol}";
+        var response = new MarketDataResponse { Message = message };
         response.Bars.AddRangeFast(barsSpan);
         return response;
     }

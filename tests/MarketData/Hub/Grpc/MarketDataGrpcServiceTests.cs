@@ -34,9 +34,8 @@ public class MarketDataGrpcServiceTests
     )
     {
         // Arrange
-        const string expectedMessage = "Successfully fetched market data";
         _ = BarInterval.TryParse(interval, out BarInterval? barInterval);
-        List<Bar> bars =
+        List<Bar> expectedBars =
         [
             new Bar
             {
@@ -61,7 +60,9 @@ public class MarketDataGrpcServiceTests
                 Volume = 456789,
             },
         ];
-        var barsGrpc = bars.Select(b => b.ToProto());
+        var expectedMessage =
+            $"Fetched {expectedBars.Count} records for {interval} interval of {symbol}";
+        var barsGrpc = expectedBars.Select(b => b.ToProto());
         _marketDataFetchServiceMock
             .Setup(s =>
                 s.GetMarketDataAsync(
@@ -69,7 +70,7 @@ public class MarketDataGrpcServiceTests
                     It.Is<BarInterval>(b => b.ToString() == interval)
                 )
             )
-            .ReturnsAsync(bars);
+            .ReturnsAsync(expectedBars);
         var request = new MarketDataRequest { Symbol = symbol, Interval = interval };
 
         // Act

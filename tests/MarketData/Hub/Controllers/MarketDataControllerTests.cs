@@ -1,3 +1,5 @@
+namespace QuantLab.MarketData.Hub.UnitTests.Controllers;
+
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -5,32 +7,30 @@ using QuantLab.MarketData.Hub.Controllers;
 using QuantLab.MarketData.Hub.Models.Domain;
 using QuantLab.MarketData.Hub.Services.Interface.Fetch;
 
-namespace QuantLab.MarketData.Hub.UnitTests.Controllers;
-
 [TestFixture]
-public class DataControllerTests
+public class MarketDataControllerTests
 {
     private Mock<IMarketDataFetchService> _marketDataFetchServiceMock = null!;
-    private DataController _dataController = null!;
+    private MarketDataController _marketDataController = null!;
 
     [SetUp]
     public void SetUp()
     {
         _marketDataFetchServiceMock = new();
-        _dataController = new(_marketDataFetchServiceMock.Object);
+        _marketDataController = new(_marketDataFetchServiceMock.Object);
     }
 
     [TestCase("ABC", "1d")]
     [TestCase("XYZ", "1h")]
     [TestCase("QSD", "5m")]
-    public async Task GetData_ValidParameters_ReturnsOkWithMessage(
+    public async Task GetMarketData_ValidParameters_ReturnsOkWithMessage(
         string symbol,
         string barInterval
     )
     {
         // Arrange
         _ = BarInterval.TryParse(barInterval, out BarInterval? interval);
-        IReadOnlyList<Bar> expectedResult =
+        IReadOnlyList<Bar> expectedBars =
         [
             new Bar
             {
@@ -45,6 +45,8 @@ public class DataControllerTests
                 Close = 29.15m,
             },
         ];
+        var expectedMessage =
+            $"Fetched {expectedBars.Count} records for {interval} interval of {symbol}";
         _marketDataFetchServiceMock
             .Setup(s =>
                 s.GetMarketDataAsync(
@@ -52,17 +54,17 @@ public class DataControllerTests
                     It.Is<BarInterval>(b => b.ToString() == barInterval)
                 )
             )
-            .ReturnsAsync(expectedResult);
+            .ReturnsAsync(expectedBars);
 
         // Act
-        var result = await _dataController.GetData(symbol, barInterval);
+        var result = await _marketDataController.GetMarketData(symbol, barInterval);
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
         (result as OkObjectResult)!
             .Value.Should()
             .BeEquivalentTo(
-                new { message = expectedResult },
+                new { Message = expectedMessage, Bars = expectedBars },
                 options => options.WithStrictOrdering()
             );
 
@@ -77,55 +79,55 @@ public class DataControllerTests
     }
 
     [Test]
-    public async Task GetData_NullSymbol_ReturnsBadRequest()
+    public async Task GetMarketData_NullSymbol_ReturnsBadRequest()
     {
         // Arrange && Act
-        var result = await _dataController.GetData(null!, "1d");
+        var result = await _marketDataController.GetMarketData(null!, "1d");
 
         // Assert
         result.Should().BeOfType<BadRequestObjectResult>();
-        (result as BadRequestObjectResult)!.Value.Should().Be("Symbol is required.");
+        (result as BadRequestObjectResult)!.Value.Should().Be("Symbol is required");
 
         _marketDataFetchServiceMock.VerifyNoOtherCalls();
     }
 
     [TestCase("  ")]
     [TestCase("")]
-    public async Task GetData_MissingSymbol_ReturnsBadRequest(string missingSymbolParam)
+    public async Task GetMarketData_MissingSymbol_ReturnsBadRequest(string missingSymbolParam)
     {
         // Arrange && Act
-        var result = await _dataController.GetData(missingSymbolParam, "1h");
+        var result = await _marketDataController.GetMarketData(missingSymbolParam, "1h");
 
         // Assert
         result.Should().BeOfType<BadRequestObjectResult>();
-        (result as BadRequestObjectResult)!.Value.Should().Be("Symbol is required.");
+        (result as BadRequestObjectResult)!.Value.Should().Be("Symbol is required");
 
         _marketDataFetchServiceMock.VerifyNoOtherCalls();
     }
 
     [Test]
-    public async Task GetData_NullBarInterval_ReturnsBadRequest()
+    public async Task GetMarketData_NullInterval_ReturnsBadRequest()
     {
         // Arrange && Act
-        var result = await _dataController.GetData("ABC", null!);
+        var result = await _marketDataController.GetMarketData("ABC", null!);
 
         // Assert
         result.Should().BeOfType<BadRequestObjectResult>();
-        (result as BadRequestObjectResult)!.Value.Should().Be("Bar Interval is required.");
+        (result as BadRequestObjectResult)!.Value.Should().Be("Interval is required");
 
         _marketDataFetchServiceMock.VerifyNoOtherCalls();
     }
 
     [TestCase("  ")]
     [TestCase("")]
-    public async Task GetData_MissingBarInterval_ReturnsBadRequest(string missingBarIntervalParam)
+    public async Task GetMarketData_MissingInterval_ReturnsBadRequest(string missingIntervalParam)
     {
         // Arrange && Act
-        var result = await _dataController.GetData("ABC", missingBarIntervalParam);
+        var result = await _marketDataController.GetMarketData("ABC", missingIntervalParam);
 
         // Assert
         result.Should().BeOfType<BadRequestObjectResult>();
-        (result as BadRequestObjectResult)!.Value.Should().Be("Bar Interval is required.");
+        (result as BadRequestObjectResult)!.Value.Should().Be("Interval is required");
 
         _marketDataFetchServiceMock.VerifyNoOtherCalls();
     }
@@ -138,14 +140,14 @@ public class DataControllerTests
     [TestCase("h")]
     [TestCase("d")]
     [TestCase("adssff")]
-    public async Task GetData_InvalidBarInterval_ReturnsBadRequest(string invalidBarIntervalParam)
+    public async Task GetMarketData_InvalidInterval_ReturnsBadRequest(string invalidIntervalParam)
     {
         // Arrange & Act
-        var result = await _dataController.GetData("ABC", invalidBarIntervalParam);
+        var result = await _marketDataController.GetMarketData("ABC", invalidIntervalParam);
 
         // Assert
         result.Should().BeOfType<BadRequestObjectResult>();
-        (result as BadRequestObjectResult)!.Value.Should().Be("Bar Interval is invalid to fetch.");
+        (result as BadRequestObjectResult)!.Value.Should().Be("Interval is invalid to fetch");
 
         _marketDataFetchServiceMock.VerifyNoOtherCalls();
     }
