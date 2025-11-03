@@ -52,15 +52,15 @@ public class DownloadGrpcService(
         string inputFileName
     )
     {
-        var barInterval = historicalBarsRequest.BarInterval;
-        if (string.IsNullOrWhiteSpace(barInterval))
-            return new StatusReply { Message = "Bar Interval is required." };
+        var interval = historicalBarsRequest.Interval;
+        if (string.IsNullOrWhiteSpace(interval))
+            return new StatusReply { Message = "Interval is required" };
 
-        if (!BarInterval.TryParse(barInterval, out var parsedBarInterval))
-            return new StatusReply { Message = "Bar Interval is invalid." };
+        if (!BarInterval.TryParse(interval, out var barInterval))
+            return new StatusReply { Message = "Interval is invalid" };
 
         var message = await ibkrBarDownloadService.DownloadHistoricalBarAsync(
-            parsedBarInterval!,
+            barInterval!,
             inputFileName
         );
         return new StatusReply { Message = message };

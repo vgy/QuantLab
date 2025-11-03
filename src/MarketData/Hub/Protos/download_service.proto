@@ -13,7 +13,7 @@ service DownloadGrpc {
 message Empty {}
 
 message HistoricalBarsRequest {
-  string barInterval = 1;
+  string interval = 1;
 }
 
 message StatusReply {

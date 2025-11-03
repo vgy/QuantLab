@@ -84,7 +84,7 @@ public class DownloadControllerTests
     }
 
     [Test]
-    public async Task DownloadHistoricalBar_ValidBarInterval_ReturnsOkWithMessage()
+    public async Task DownloadHistoricalBars_ValidInterval_ReturnsOkWithMessage()
     {
         // Arrange
         const string expectedMessage = "Bars retrieved successfully";
@@ -98,7 +98,7 @@ public class DownloadControllerTests
             .ReturnsAsync(expectedMessage);
 
         // Act
-        var result = await _downloadController.DownloadHistoricalBar("1m");
+        var result = await _downloadController.DownloadHistoricalBars("1m");
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
@@ -117,19 +117,17 @@ public class DownloadControllerTests
     }
 
     [Test]
-    public async Task DownloadHistoricalBar_MissingBarInterval_ReturnsBadRequest()
+    public async Task DownloadHistoricalBars_MissingInterval_ReturnsBadRequest()
     {
         // Arrange
         string? invalidParam = "";
 
         // Act
-        var result = await _downloadController.DownloadHistoricalBar(invalidParam);
+        var result = await _downloadController.DownloadHistoricalBars(invalidParam);
 
         // Assert
         result.Should().BeOfType<BadRequestObjectResult>();
-        (result as BadRequestObjectResult)!
-            .Value.Should()
-            .Be("Bar Interval parameter is required.");
+        (result as BadRequestObjectResult)!.Value.Should().Be("Interval is required");
 
         _ibkrBarDownloadServiceMock.VerifyNoOtherCalls();
     }
@@ -142,22 +140,20 @@ public class DownloadControllerTests
     [TestCase("h")]
     [TestCase("d")]
     [TestCase("adssff")]
-    public async Task DownloadHistoricalBar_InvalidBarInterval_ReturnsBadRequest(
-        string invalidParam
-    )
+    public async Task DownloadHistoricalBars_InvalidInterval_ReturnsBadRequest(string invalidParam)
     {
         // Arrange & Act
-        var result = await _downloadController.DownloadHistoricalBar(invalidParam); // whitespace invalid
+        var result = await _downloadController.DownloadHistoricalBars(invalidParam); // whitespace invalid
 
         // Assert
         result.Should().BeOfType<BadRequestObjectResult>();
-        (result as BadRequestObjectResult)!.Value.Should().Be("Bar Interval parameter is invalid.");
+        (result as BadRequestObjectResult)!.Value.Should().Be("Interval is invalid");
 
         _ibkrBarDownloadServiceMock.VerifyNoOtherCalls();
     }
 
     [Test]
-    public async Task DownloadHistoricalBarForRetrySymbols_ValidBarInterval_ReturnsOkWithMessage()
+    public async Task DownloadHistoricalBarsForMissedSymbols_ValidInterval_ReturnsOkWithMessage()
     {
         // Arrange
         const string expectedMessage = "✅ Retry bars retrieved successfully";
@@ -171,7 +167,7 @@ public class DownloadControllerTests
             .ReturnsAsync(expectedMessage);
 
         // Act
-        var result = await _downloadController.DownloadHistoricalBarForRetrySymbols("5m");
+        var result = await _downloadController.DownloadHistoricalBarsForMissedSymbols("5m");
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
@@ -190,7 +186,7 @@ public class DownloadControllerTests
     }
 
     [Test]
-    public async Task DownloadHistoricalBar_PrivateHelper_CallsServiceCorrectly()
+    public async Task DownloadHistoricalBars_PrivateHelper_CallsServiceCorrectly()
     {
         // Arrange
         const string expectedMessage = "✅ Bars downloaded internally";
@@ -204,7 +200,7 @@ public class DownloadControllerTests
             .ReturnsAsync(expectedMessage);
 
         // Act
-        var result = await InvokePrivateDownloadHistoricalBar("1h", SymbolsAndContractIdsFileName);
+        var result = await InvokePrivateDownloadHistoricalBars("1h", SymbolsAndContractIdsFileName);
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
@@ -213,13 +209,13 @@ public class DownloadControllerTests
             .BeEquivalentTo(new { message = expectedMessage });
     }
 
-    private async Task<IActionResult> InvokePrivateDownloadHistoricalBar(
+    private async Task<IActionResult> InvokePrivateDownloadHistoricalBars(
         string interval,
         string file
     )
     {
         var method = typeof(DownloadController).GetMethod(
-            "DownloadHistoricalBar",
+            "DownloadHistoricalBars",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
         );
 

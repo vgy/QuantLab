@@ -23,34 +23,31 @@ public class DownloadController(
         return Ok(new { message });
     }
 
-    [HttpPost("bars/{barIntervalParam}")]
-    public async Task<IActionResult> DownloadHistoricalBar(string barIntervalParam)
+    [HttpPost("bars/{interval}")]
+    public async Task<IActionResult> DownloadHistoricalBars(string interval)
     {
-        return await DownloadHistoricalBar(
-            barIntervalParam,
+        return await DownloadHistoricalBars(
+            interval,
             fileStorageSettings.Value.SymbolsAndContractIdsFileName
         );
     }
 
-    [HttpPost("bars/{barIntervalParam}/retry")]
-    public async Task<IActionResult> DownloadHistoricalBarForRetrySymbols(string barIntervalParam)
+    [HttpPost("bars/{interval}/retry")]
+    public async Task<IActionResult> DownloadHistoricalBarsForMissedSymbols(string interval)
     {
-        return await DownloadHistoricalBar(
-            barIntervalParam,
+        return await DownloadHistoricalBars(
+            interval,
             fileStorageSettings.Value.RetrySymbolsAndContractIdsFileName
         );
     }
 
-    private async Task<IActionResult> DownloadHistoricalBar(
-        string barIntervalParam,
-        string inputFileName
-    )
+    private async Task<IActionResult> DownloadHistoricalBars(string interval, string inputFileName)
     {
-        if (string.IsNullOrWhiteSpace(barIntervalParam))
-            return BadRequest("Bar Interval parameter is required.");
+        if (string.IsNullOrWhiteSpace(interval))
+            return BadRequest("Interval is required");
 
-        if (!BarInterval.TryParse(barIntervalParam, out var barInterval))
-            return BadRequest("Bar Interval parameter is invalid.");
+        if (!BarInterval.TryParse(interval, out var barInterval))
+            return BadRequest("Interval is invalid");
 
         var message = await ibkrBarDownloadService.DownloadHistoricalBarAsync(
             barInterval!,

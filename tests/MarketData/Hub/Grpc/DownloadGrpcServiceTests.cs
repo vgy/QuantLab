@@ -83,7 +83,7 @@ public class DownloadGrpcServiceTests
     }
 
     [Test]
-    public async Task DownloadHistoricalBar_WhenCalledWithValidBarInterval_ReturnsExpectedMessage()
+    public async Task DownloadHistoricalBars_WhenCalledWithValidBarInterval_ReturnsExpectedMessage()
     {
         // Arrange
         const string expectedMessage = "Bars retrieved successfully";
@@ -95,7 +95,7 @@ public class DownloadGrpcServiceTests
                 )
             )
             .ReturnsAsync(expectedMessage);
-        var request = new HistoricalBarsRequest { BarInterval = "1m" };
+        var request = new HistoricalBarsRequest { Interval = "1m" };
 
         // Act
         var result = await _downloadGrpcService.DownloadHistoricalBars(
@@ -119,7 +119,7 @@ public class DownloadGrpcServiceTests
     }
 
     [Test]
-    public async Task DownloadHistoricalBar_WhenCalledithMissingBarInterval_ReturnsBaRIntervalIsRequired()
+    public async Task DownloadHistoricalBars_WhenCalledithMissingBarInterval_ReturnsBaRIntervalIsRequired()
     {
         // Arrange
         var request = new HistoricalBarsRequest();
@@ -133,19 +133,19 @@ public class DownloadGrpcServiceTests
         // Assert
         result.Should().NotBeNull();
         result.Should().BeOfType<StatusReply>();
-        result.Should().BeEquivalentTo(new StatusReply { Message = "Bar Interval is required." });
+        result.Should().BeEquivalentTo(new StatusReply { Message = "Interval is required" });
 
         _ibkrBarDownloadServiceMock.VerifyNoOtherCalls();
     }
 
     [TestCase("")]
     [TestCase("  ")]
-    public async Task DownloadHistoricalBar_WhenCalledithWhiteSpaceAsBarInterval_ReturnsBaRIntervalIsRequired(
+    public async Task DownloadHistoricalBars_WhenCalledithWhiteSpaceAsBarInterval_ReturnsBaRIntervalIsRequired(
         string invalidParam
     )
     {
         // Arrange
-        var request = new HistoricalBarsRequest { BarInterval = invalidParam };
+        var request = new HistoricalBarsRequest { Interval = invalidParam };
         var context = CreateFakeContext();
 
         // Act
@@ -154,7 +154,7 @@ public class DownloadGrpcServiceTests
         // Assert
         result.Should().NotBeNull();
         result.Should().BeOfType<StatusReply>();
-        result.Should().BeEquivalentTo(new StatusReply { Message = "Bar Interval is required." });
+        result.Should().BeEquivalentTo(new StatusReply { Message = "Interval is required" });
 
         _ibkrBarDownloadServiceMock.VerifyNoOtherCalls();
     }
@@ -167,12 +167,12 @@ public class DownloadGrpcServiceTests
     [TestCase("h")]
     [TestCase("d")]
     [TestCase("adssff")]
-    public async Task DownloadHistoricalBar_WhenCalledithInvalidBarInterval_ReturnsInvalidRequest(
+    public async Task DownloadHistoricalBars_WhenCalledithInvalidBarInterval_ReturnsInvalidRequest(
         string invalidParam
     )
     {
         // Arrange
-        var request = new HistoricalBarsRequest { BarInterval = invalidParam };
+        var request = new HistoricalBarsRequest { Interval = invalidParam };
         var context = CreateFakeContext();
 
         // Act
@@ -181,7 +181,7 @@ public class DownloadGrpcServiceTests
         // Assert
         result.Should().NotBeNull();
         result.Should().BeOfType<StatusReply>();
-        result.Should().BeEquivalentTo(new StatusReply { Message = "Bar Interval is invalid." });
+        result.Should().BeEquivalentTo(new StatusReply { Message = "Interval is invalid" });
 
         _ibkrBarDownloadServiceMock.VerifyNoOtherCalls();
     }
@@ -199,7 +199,7 @@ public class DownloadGrpcServiceTests
                 )
             )
             .ReturnsAsync(expectedMessage);
-        var request = new HistoricalBarsRequest { BarInterval = "1m" };
+        var request = new HistoricalBarsRequest { Interval = "1m" };
 
         // Act
         var result = await _downloadGrpcService.DownloadHistoricalBarsForMissedSymbols(
@@ -237,7 +237,7 @@ public class DownloadGrpcServiceTests
         // Assert
         result.Should().NotBeNull();
         result.Should().BeOfType<StatusReply>();
-        result.Should().BeEquivalentTo(new StatusReply { Message = "Bar Interval is required." });
+        result.Should().BeEquivalentTo(new StatusReply { Message = "Interval is required" });
 
         _ibkrBarDownloadServiceMock.VerifyNoOtherCalls();
     }
@@ -249,7 +249,7 @@ public class DownloadGrpcServiceTests
     )
     {
         // Arrange
-        var request = new HistoricalBarsRequest { BarInterval = invalidParam };
+        var request = new HistoricalBarsRequest { Interval = invalidParam };
         var context = CreateFakeContext();
 
         // Act
@@ -258,7 +258,7 @@ public class DownloadGrpcServiceTests
         // Assert
         result.Should().NotBeNull();
         result.Should().BeOfType<StatusReply>();
-        result.Should().BeEquivalentTo(new StatusReply { Message = "Bar Interval is required." });
+        result.Should().BeEquivalentTo(new StatusReply { Message = "Interval is required" });
 
         _ibkrBarDownloadServiceMock.VerifyNoOtherCalls();
     }
@@ -276,7 +276,7 @@ public class DownloadGrpcServiceTests
     )
     {
         // Arrange
-        var request = new HistoricalBarsRequest { BarInterval = invalidParam };
+        var request = new HistoricalBarsRequest { Interval = invalidParam };
         var context = CreateFakeContext();
 
         // Act
@@ -285,7 +285,7 @@ public class DownloadGrpcServiceTests
         // Assert
         result.Should().NotBeNull();
         result.Should().BeOfType<StatusReply>();
-        result.Should().BeEquivalentTo(new StatusReply { Message = "Bar Interval is invalid." });
+        result.Should().BeEquivalentTo(new StatusReply { Message = "Interval is invalid" });
 
         _ibkrBarDownloadServiceMock.VerifyNoOtherCalls();
     }
