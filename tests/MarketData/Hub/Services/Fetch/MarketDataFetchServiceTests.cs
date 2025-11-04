@@ -42,23 +42,23 @@ public class MarketDataFetchServiceTests
     [TestCase("ABC", "1d")]
     [TestCase("XYZ", "1h")]
     [TestCase("QSD", "5m")]
-    public async Task GetDataAsync_ValidParameters_ReturnsBars(string symbol, string barInterval)
+    public async Task GetDataAsync_ValidParameters_ReturnsBars(string symbol, string interval)
     {
         // Arrange
-        _ = BarInterval.TryParse(barInterval, out BarInterval? interval);
+        _ = BarIntervalConverter.TryParse(interval, out BarInterval barInterval);
         var filePath = string.Format(HistoricalBarsRelativePathTemplate, interval, symbol);
         List<Bar> expectedResult =
         [
             new Bar
             {
                 Symbol = symbol,
-                Interval = interval!,
+                Interval = barInterval,
                 Close = 28.15m,
             },
             new Bar
             {
                 Symbol = symbol,
-                Interval = interval!,
+                Interval = barInterval,
                 Close = 29.15m,
             },
         ];
@@ -73,7 +73,7 @@ public class MarketDataFetchServiceTests
             .ReturnsAsync(expectedResult);
 
         // Act
-        var result = await _marketDataFetchService.GetMarketDataAsync(symbol, interval!);
+        var result = await _marketDataFetchService.GetMarketDataAsync(symbol, barInterval);
 
         // Assert
         result.Should().BeEquivalentTo(expectedResult, options => options.WithStrictOrdering());
@@ -119,26 +119,16 @@ public class MarketDataFetchServiceTests
         _csvFileServiceMock.VerifyNoOtherCalls();
     }
 
-    [Test]
-    public void GetDataAsync_NullBarInterval_ThrowsArgumentNullException()
-    {
-        // Act && Assert
-        Assert.ThrowsAsync<ArgumentNullException>(async () =>
-            await _marketDataFetchService.GetMarketDataAsync("ABC", null!)
-        );
-        _csvFileServiceMock.VerifyNoOtherCalls();
-    }
-
     [TestCase("ABC", "1d")]
     [TestCase("XYZ", "1h")]
     [TestCase("QSD", "5m")]
     public async Task GetDataAsync_WhenCsvFileServiceReturnsEmptyList_ReturnsEmptyList(
         string symbol,
-        string barInterval
+        string interval
     )
     {
         // Arrange
-        _ = BarInterval.TryParse(barInterval, out BarInterval? interval);
+        _ = BarIntervalConverter.TryParse(interval, out BarInterval barInterval);
         var filePath = string.Format(HistoricalBarsRelativePathTemplate, interval, symbol);
         _csvFileServiceMock
             .Setup(f =>
@@ -151,7 +141,7 @@ public class MarketDataFetchServiceTests
             .ReturnsAsync([]);
 
         // Act
-        var result = await _marketDataFetchService.GetMarketDataAsync(symbol, interval!);
+        var result = await _marketDataFetchService.GetMarketDataAsync(symbol, barInterval);
 
         // Assert
         result.Should().BeEmpty();
@@ -178,11 +168,11 @@ public class MarketDataFetchServiceTests
     [TestCase("QSD", "5m")]
     public async Task GetDataAsync_WhenCsvFileServiceThrowsException_ReturnsEmptyList(
         string symbol,
-        string barInterval
+        string interval
     )
     {
         // Arrange
-        _ = BarInterval.TryParse(barInterval, out BarInterval? interval);
+        _ = BarIntervalConverter.TryParse(interval, out BarInterval barInterval);
         var filePath = string.Format(HistoricalBarsRelativePathTemplate, interval, symbol);
         _csvFileServiceMock
             .Setup(f =>
@@ -195,7 +185,7 @@ public class MarketDataFetchServiceTests
             .Throws<Exception>();
 
         // Act
-        var result = await _marketDataFetchService.GetMarketDataAsync(symbol, interval!);
+        var result = await _marketDataFetchService.GetMarketDataAsync(symbol, barInterval);
 
         // Assert
         result.Should().BeEmpty();
@@ -232,11 +222,11 @@ public class MarketDataFetchServiceTests
     )
     {
         // Arrange
-        _ = BarInterval.TryParse(interval, out BarInterval? barInterval);
+        _ = BarIntervalConverter.TryParse(interval, out BarInterval barInterval);
         var bar = new Bar
         {
             Symbol = symbol,
-            Interval = barInterval!,
+            Interval = barInterval,
             Timestamp = timestamp,
             Open = open,
             High = high,

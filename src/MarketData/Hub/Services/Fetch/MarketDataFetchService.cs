@@ -21,8 +21,11 @@ public sealed class MarketDataFetchService(
     public async Task<IReadOnlyList<Bar>> GetMarketDataAsync(string symbol, BarInterval barInterval)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(symbol);
-        ArgumentNullException.ThrowIfNull(barInterval);
-        var fileName = string.Format(_historicalBarsRelativePathTemplate, barInterval, symbol);
+        var fileName = string.Format(
+            _historicalBarsRelativePathTemplate,
+            barInterval.ToShortString(),
+            symbol
+        );
         try
         {
             var bars = await fileService.ReadAsync(fileName, a => ParseBar(a, fileName));
@@ -30,7 +33,7 @@ public sealed class MarketDataFetchService(
             logger.LogInformation(
                 "Fetched {count} records for {barInterval} of {symbol} from {fileName}",
                 barsList.Count,
-                barInterval,
+                barInterval.ToShortString(),
                 symbol,
                 fileName
             );
@@ -41,7 +44,7 @@ public sealed class MarketDataFetchService(
             logger.LogError(
                 ex,
                 "Data Fetch Error for {barInterval} of {symbol} from {fileName}",
-                barInterval,
+                barInterval.ToShortString(),
                 symbol,
                 fileName
             );
@@ -53,7 +56,7 @@ public sealed class MarketDataFetchService(
     {
         if (
             values.Length != 8
-            || !BarInterval.TryParse(values[1], out BarInterval? interval)
+            || !BarIntervalConverter.TryParse(values[1], out BarInterval interval)
             || !long.TryParse(values[2], out long timestamp)
             || !decimal.TryParse(values[3], out decimal open)
             || !decimal.TryParse(values[4], out decimal high)
@@ -70,7 +73,7 @@ public sealed class MarketDataFetchService(
         return new Bar
         {
             Symbol = values[0],
-            Interval = interval!,
+            Interval = interval,
             Timestamp = timestamp,
             Open = open,
             High = high,

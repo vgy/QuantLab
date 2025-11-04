@@ -34,13 +34,13 @@ public class MarketDataGrpcServiceTests
     )
     {
         // Arrange
-        _ = BarInterval.TryParse(interval, out BarInterval? barInterval);
+        _ = BarIntervalConverter.TryParse(interval, out BarInterval barInterval);
         List<Bar> expectedBars =
         [
             new Bar
             {
                 Symbol = symbol,
-                Interval = barInterval!,
+                Interval = barInterval,
                 Timestamp = 123456789,
                 Open = 12.45m,
                 High = 29.46m,
@@ -51,7 +51,7 @@ public class MarketDataGrpcServiceTests
             new Bar
             {
                 Symbol = symbol,
-                Interval = barInterval!,
+                Interval = barInterval,
                 Timestamp = 987654321,
                 Open = 14.45m,
                 High = 31.46m,
@@ -67,7 +67,7 @@ public class MarketDataGrpcServiceTests
             .Setup(s =>
                 s.GetMarketDataAsync(
                     It.Is<string>(x => x == symbol),
-                    It.Is<BarInterval>(b => b.ToString() == interval)
+                    It.Is<BarInterval>(b => b.ToShortString() == interval)
                 )
             )
             .ReturnsAsync(expectedBars);
@@ -86,7 +86,7 @@ public class MarketDataGrpcServiceTests
             s =>
                 s.GetMarketDataAsync(
                     It.Is<string>(x => x == symbol),
-                    It.Is<BarInterval>(b => b.ToString() == interval)
+                    It.Is<BarInterval>(b => b.ToShortString() == interval)
                 ),
             Times.Once
         );

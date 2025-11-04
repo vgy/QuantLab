@@ -46,11 +46,11 @@ public class DownloadController(
         if (string.IsNullOrWhiteSpace(interval))
             return BadRequest("Interval is required");
 
-        if (!BarInterval.TryParse(interval, out var barInterval))
+        if (!BarIntervalConverter.TryParse(interval, out var barInterval))
             return BadRequest("Interval is invalid");
 
         var message = await ibkrBarDownloadService.DownloadHistoricalBarAsync(
-            barInterval!,
+            barInterval,
             inputFileName
         );
         return Ok(new { message });

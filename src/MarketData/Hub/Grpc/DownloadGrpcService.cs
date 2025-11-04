@@ -56,11 +56,11 @@ public class DownloadGrpcService(
         if (string.IsNullOrWhiteSpace(interval))
             return new StatusReply { Message = "Interval is required" };
 
-        if (!BarInterval.TryParse(interval, out var barInterval))
+        if (!BarIntervalConverter.TryParse(interval, out var barInterval))
             return new StatusReply { Message = "Interval is invalid" };
 
         var message = await ibkrBarDownloadService.DownloadHistoricalBarAsync(
-            barInterval!,
+            barInterval,
             inputFileName
         );
         return new StatusReply { Message = message };

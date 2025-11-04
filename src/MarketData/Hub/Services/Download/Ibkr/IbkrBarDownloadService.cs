@@ -109,16 +109,16 @@ public sealed class IbkrBarDownloadService(
         var matchedKeys = results.Select(t => t[0].Symbol).ToHashSet();
         var unavailableSymbols = symbols.Where(x => !matchedKeys.Contains(x.Name)).ToList();
         await _fileService.WriteAsync(_retrySymbolsAndContractIdsFileName, unavailableSymbols);
-        return $"Retrieved Historical Bars of {barInterval.ToString()} for {results.Count} of {symbols.Count()} symbols";
+        return $"Retrieved Historical Bars of {barInterval.ToShortString()} for {results.Count} of {symbols.Count()} symbols";
     }
 
     private string BuildUrl(int conId, BarInterval barInterval, string? startTime = null)
     {
-        (string period, string bar) = barInterval.ToString() switch
+        (string period, string bar) = barInterval switch
         {
-            "1m" => ("1d", "1min"),
-            "5m" => ("2d", "5min"),
-            "1h" => ("1m", "1h"),
+            BarInterval.FiveMinutes => ("2d", "5m"),
+            BarInterval.OneHour => ("1m", "1h"),
+            BarInterval.OneDay => ("1y", "1d"),
             _ => ("1y", "1d"),
         };
 

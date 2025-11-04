@@ -27,11 +27,11 @@ public class BarExtensionsTests
     )
     {
         // Arrange
-        _ = BarInterval.TryParse(interval, out BarInterval? barInterval);
+        _ = BarIntervalConverter.TryParse(interval, out BarInterval barInterval);
         var bar = new Bar
         {
             Symbol = symbol,
-            Interval = barInterval!,
+            Interval = barInterval,
             Timestamp = timestamp,
             Open = open,
             High = high,

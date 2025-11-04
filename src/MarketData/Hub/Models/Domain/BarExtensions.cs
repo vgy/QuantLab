@@ -14,7 +14,7 @@ public static class BarExtensions
         var pb = new BarGrpc
         {
             Symbol = b.Symbol,
-            Interval = b.Interval.ToString(),
+            Interval = b.Interval.ToShortString(),
             Timestamp = b.Timestamp,
             Open = DecimalValue.FromDecimal(b.Open).ToProto(),
             High = DecimalValue.FromDecimal(b.High).ToProto(),

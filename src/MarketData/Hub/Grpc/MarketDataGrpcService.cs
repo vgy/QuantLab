@@ -21,14 +21,10 @@ public class MarketDataGrpcService(IMarketDataFetchService marketDataFetchServic
         if (string.IsNullOrWhiteSpace(request.Interval))
             return new MarketDataResponse { Message = "Interval is required" };
 
-        var result = BarInterval.GetFetchInterval(request.Interval);
-        if (!result.IsValid)
+        if (!BarIntervalConverter.TryParse(request.Interval, out var barInterval))
             return new MarketDataResponse { Message = "Interval is invalid to fetch" };
 
-        var bars = await marketDataFetchService.GetMarketDataAsync(
-            request.Symbol,
-            result.BarInterval!
-        );
+        var bars = await marketDataFetchService.GetMarketDataAsync(request.Symbol, barInterval);
         var barsSpan = CollectionsMarshal.AsSpan([.. bars]);
         var message =
             $"Fetched {bars.Count} records for {request.Interval} interval of {request.Symbol}";

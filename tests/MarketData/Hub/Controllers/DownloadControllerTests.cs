@@ -98,7 +98,7 @@ public class DownloadControllerTests
             .ReturnsAsync(expectedMessage);
 
         // Act
-        var result = await _downloadController.DownloadHistoricalBars("1m");
+        var result = await _downloadController.DownloadHistoricalBars("5m");
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
@@ -109,7 +109,7 @@ public class DownloadControllerTests
         _ibkrBarDownloadServiceMock.Verify(
             s =>
                 s.DownloadHistoricalBarAsync(
-                    It.Is<BarInterval>(b => b.ToString() == "1m"),
+                    It.Is<BarInterval>(b => b.ToShortString() == "5m"),
                     It.Is<string>(x => x == SymbolsAndContractIdsFileName)
                 ),
             Times.Once
@@ -178,7 +178,7 @@ public class DownloadControllerTests
         _ibkrBarDownloadServiceMock.Verify(
             s =>
                 s.DownloadHistoricalBarAsync(
-                    It.Is<BarInterval>(b => b.ToString() == "5m"),
+                    It.Is<BarInterval>(b => b.ToShortString() == "5m"),
                     It.Is<string>(x => x == RetrySymbolsAndContractIdsFileName)
                 ),
             Times.Once

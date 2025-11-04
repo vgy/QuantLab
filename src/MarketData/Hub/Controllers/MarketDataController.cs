@@ -18,11 +18,10 @@ public sealed class MarketDataController(IMarketDataFetchService marketDataFetch
         if (string.IsNullOrWhiteSpace(interval))
             return BadRequest("Interval is required");
 
-        var result = BarInterval.GetFetchInterval(interval);
-        if (!result.IsValid)
+        if (!BarIntervalConverter.TryParse(interval, out var barInterval))
             return BadRequest("Interval is invalid to fetch");
 
-        var bars = await marketDataFetchService.GetMarketDataAsync(symbol, result.BarInterval!);
+        var bars = await marketDataFetchService.GetMarketDataAsync(symbol, barInterval);
         var message = $"Fetched {bars.Count} records for {interval} interval of {symbol}";
         return Ok(new { Message = message, Bars = bars });
     }

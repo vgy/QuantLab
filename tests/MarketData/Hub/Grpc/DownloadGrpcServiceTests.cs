@@ -95,7 +95,7 @@ public class DownloadGrpcServiceTests
                 )
             )
             .ReturnsAsync(expectedMessage);
-        var request = new HistoricalBarsRequest { Interval = "1m" };
+        var request = new HistoricalBarsRequest { Interval = "5m" };
 
         // Act
         var result = await _downloadGrpcService.DownloadHistoricalBars(
@@ -111,7 +111,7 @@ public class DownloadGrpcServiceTests
         _ibkrBarDownloadServiceMock.Verify(
             s =>
                 s.DownloadHistoricalBarAsync(
-                    It.Is<BarInterval>(b => b.ToString() == "1m"),
+                    It.Is<BarInterval>(b => b.ToShortString() == "5m"),
                     It.Is<string>(x => x == SymbolsAndContractIdsFileName)
                 ),
             Times.Once
@@ -199,7 +199,7 @@ public class DownloadGrpcServiceTests
                 )
             )
             .ReturnsAsync(expectedMessage);
-        var request = new HistoricalBarsRequest { Interval = "1m" };
+        var request = new HistoricalBarsRequest { Interval = "5m" };
 
         // Act
         var result = await _downloadGrpcService.DownloadHistoricalBarsForMissedSymbols(
@@ -215,7 +215,7 @@ public class DownloadGrpcServiceTests
         _ibkrBarDownloadServiceMock.Verify(
             s =>
                 s.DownloadHistoricalBarAsync(
-                    It.Is<BarInterval>(b => b.ToString() == "1m"),
+                    It.Is<BarInterval>(b => b.ToShortString() == "5m"),
                     It.Is<string>(x => x == RetrySymbolsAndContractIdsFileName)
                 ),
             Times.Once

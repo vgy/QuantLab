@@ -25,23 +25,23 @@ public class MarketDataControllerTests
     [TestCase("QSD", "5m")]
     public async Task GetMarketData_ValidParameters_ReturnsOkWithMessage(
         string symbol,
-        string barInterval
+        string interval
     )
     {
         // Arrange
-        _ = BarInterval.TryParse(barInterval, out BarInterval? interval);
+        _ = BarIntervalConverter.TryParse(interval, out BarInterval barInterval);
         IReadOnlyList<Bar> expectedBars =
         [
             new Bar
             {
                 Symbol = symbol,
-                Interval = interval!,
+                Interval = barInterval,
                 Close = 28.15m,
             },
             new Bar
             {
                 Symbol = symbol,
-                Interval = interval!,
+                Interval = barInterval,
                 Close = 29.15m,
             },
         ];
@@ -51,13 +51,13 @@ public class MarketDataControllerTests
             .Setup(s =>
                 s.GetMarketDataAsync(
                     It.Is<string>(x => x == symbol),
-                    It.Is<BarInterval>(b => b.ToString() == barInterval)
+                    It.Is<BarInterval>(b => b.ToShortString() == interval)
                 )
             )
             .ReturnsAsync(expectedBars);
 
         // Act
-        var result = await _marketDataController.GetMarketData(symbol, barInterval);
+        var result = await _marketDataController.GetMarketData(symbol, interval);
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
@@ -72,7 +72,7 @@ public class MarketDataControllerTests
             s =>
                 s.GetMarketDataAsync(
                     It.Is<string>(x => x == symbol),
-                    It.Is<BarInterval>(b => b.ToString() == barInterval)
+                    It.Is<BarInterval>(b => b.ToShortString() == interval)
                 ),
             Times.Once
         );
