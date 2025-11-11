@@ -65,6 +65,41 @@ builder
         return new HttpClientHandler();
     });
 
+var allowedOrigins = builder.Configuration.GetSection("AllowedCorsOrigins").Get<string[]>() ?? [];
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(
+        "MyFrontendPolicy",
+        policy =>
+        {
+            policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod();
+            if (builder.Environment.IsDevelopment())
+            {
+                // In development, allow file:// (null origin)
+                policy.SetIsOriginAllowed(origin =>
+                    allowedOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase)
+                    || origin == "null"
+                    || string.IsNullOrEmpty(origin)
+                );
+            }
+            else
+            {
+                // In production, only strict matches
+                policy.SetIsOriginAllowed(origin =>
+                    allowedOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase)
+                );
+            }
+        }
+    );
+});
+builder.WebHost.ConfigureKestrel(
+    (context, options) =>
+    {
+        options.Configure(context.Configuration.GetSection("Kestrel"));
+    }
+);
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -72,8 +107,12 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+else
+{
+    app.UseHttpsRedirection();
+}
 
-app.UseHttpsRedirection();
+app.UseCors("MyFrontendPolicy");
 
 app.MapControllers();
 app.MapGrpcService<DownloadGrpcService>();
