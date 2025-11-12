@@ -33,11 +33,14 @@ def test_get_strategies_WhenCalled_LogsExpectedMessages(mocker):
     "strategy,interval,expected_symbols",
     [
         ("Engulfing", "1h", ["INFY", "TCS", "BHEL"]),
-        ("Engulfing", "5m", ["INFY", "TCS", "BHEL"]),
-        ("Unknown", "1h", ["INFY", "TCS", "BHEL"]),
+        ("Engulfing", "5m", ["GOOGL", "MSFT", "AAPL"]),
+        ("Unknown", "1h", ["META", "AMZN", "NFLX"]),
     ],
 )
-def test_get_symbols_for_strategy_and_interval_ValidInputs_ReturnsExpectedSymbols(service, strategy, interval, expected_symbols):
+def test_get_symbols_for_strategy_and_interval_ValidInputs_ReturnsExpectedSymbols(mocker, service, strategy, interval, expected_symbols):
+    #Arrange
+    mocker.patch("strategies.core.strategy_service.StrategyFactory.get_symbols", return_value=expected_symbols)
+
     # Act
     result = service.get_symbols_for_strategy_and_interval(strategy, interval)
 
@@ -63,7 +66,10 @@ def test_get_symbols_for_strategy_and_interval_WhenCalled_LogsExpectedMessages(m
     )
 
 
-def test_get_symbols_for_strategy_and_interval_WhenEmptyInput_ReturnsDefaultSymbols(service):
+def test_get_symbols_for_strategy_and_interval_WhenEmptyInput_ReturnsDefaultSymbols(mocker, service):
+    #Arrange
+    mocker.patch("strategies.core.strategy_service.StrategyFactory.get_symbols", return_value=["INFY", "TCS", "BHEL"])
+
     # Act
     result = service.get_symbols_for_strategy_and_interval("", "")
 

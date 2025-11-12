@@ -22,7 +22,7 @@ def create_app(strategy_service):
         message = f"Returns {len(strategies)} strategies"
         return StrategiesResponse(message = message, strategies = strategies)
 
-    @app.get("/strategy/{strategy}/{interval}", response_model = SymbolsResponse)
+    @app.get("/strategies/{strategy}/{interval}", response_model = SymbolsResponse)
     def get_symbols_for_strategy_and_interval(strategy: str, interval: str):
         logger.info(f"REST: get_symbols_for_strategy_and_interval is called with {strategy} and {interval}")
         symbols = strategy_service.get_symbols_for_strategy_and_interval(strategy, interval)

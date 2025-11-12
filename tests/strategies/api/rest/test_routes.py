@@ -67,7 +67,7 @@ def test_get_symbols_for_strategy_and_interval_ValidRequest_ReturnsSymbolsRespon
     interval = "1d"
 
     # Act
-    response = client.get(f"/strategy/{strategy}/{interval}")
+    response = client.get(f"/strategies/{strategy}/{interval}")
 
     # Assert
     assert response.status_code == 200
@@ -86,7 +86,7 @@ def test_get_symbols_for_strategy_and_interval_EmptySymbols_ReturnsEmptyList(cli
     interval = "5m"
 
     # Act
-    response = client.get(f"/strategy/{strategy}/{interval}")
+    response = client.get(f"/strategies/{strategy}/{interval}")
 
     # Assert
     assert response.status_code == 200
@@ -104,7 +104,7 @@ def test_get_symbols_for_strategy_and_interval_ServiceRaisesException_ReturnsInt
     interval = "15m"
 
     # Act
-    response = client.get(f"/strategy/{strategy}/{interval}")
+    response = client.get(f"/strategies/{strategy}/{interval}")
 
     # Assert
     assert response.status_code == 500
