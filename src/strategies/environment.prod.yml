@@ -1,0 +1,14 @@
+# No 'name:' field because we will use a path (--prefix) when creating the environment
+# conda env create -p ./.venv -f environment.prod.yml
+channels:
+  - defaults
+dependencies:
+  - python=3.13.7
+  - pip
+  - pandas
+  - fastapi
+  - uvicorn
+  - grpcio
+  - grpcio-tools
+  - pyyaml
+  - loguru

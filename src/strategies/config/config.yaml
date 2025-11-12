@@ -1,0 +1,13 @@
+server:
+  rest_host: "localhost"
+  rest_port: 6002
+  grpc_host: "localhost"
+  grpc_port: 8002
+
+data:
+  directory: "F:\\Projects\\GitHub\\Data"
+  historical_bars_relative_path_template: "{0}\\{0}-{1}.csv"
+
+logging:
+  level: "INFO"
+  log_file: "./logs/strategies.log"

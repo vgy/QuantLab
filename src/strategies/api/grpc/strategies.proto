@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package strategies.api.grc;
+
+service StrategyService {
+  rpc GetStrategies (Empty) returns (StrategiesResponse);
+  rpc GetSymbolsForStrategyAndInterval (StrategyAndIntervalRequest) returns (SymbolsResponse);
+}
+
+message Empty {}
+
+message StrategyAndIntervalRequest {
+  string strategy = 1;
+  string interval = 2;
+}
+
+message StrategiesResponse {
+  string message = 1;
+  repeated string strategies = 2;
+}
+
+message SymbolsResponse {
+  string message = 1;
+  repeated string symbols = 2;
+}

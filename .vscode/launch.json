@@ -1,0 +1,42 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run MarketData Project",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/MarketData/Hub/bin/Debug/net9.0/QuantLab.MarketData.Hub.dll",
+      "cwd": "${workspaceFolder}/src/MarketData/Hub",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Run Strategies Project",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "src.strategies.main",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src",
+        "PYTHONNOUSERSITE": "1"
+      },
+      "python": "${workspaceFolder}/src/strategies/.venv/python.exe"
+    },
+    {
+      "name": "Python: pytest",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["--cov=src/strategies", "tests/strategies"],
+      "console": "integratedTerminal"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Run All Services",
+      "configurations": ["Run MarketData Project", "Run Strategies Project"]
+    }
+  ]
+}
