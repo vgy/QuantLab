@@ -35,7 +35,17 @@ export async function createChartForSymbol(container, symbol, interval) {
 
   const label = document.createElement("h3");
   label.className = "chart-label";
-  label.innerText = symbol;
+  label.innerText = `${symbol} - ${interval.toUpperCase()}`;
+
+  label.style.cursor = "pointer";
+
+  label.addEventListener("click", () => {
+    window.open(
+      `/pages/symbol.html?q=${encodeURIComponent(symbol)}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  });
 
   const chartDiv = document.createElement("div");
   chartDiv.className = "chart";
