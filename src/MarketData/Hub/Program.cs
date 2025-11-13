@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using QuantLab.MarketData.Hub.Grpc;
+using QuantLab.MarketData.Hub.Infrastructure.Time;
 using QuantLab.MarketData.Hub.Models.Config;
 using QuantLab.MarketData.Hub.Models.DTO.Responses;
 using QuantLab.MarketData.Hub.Services;
@@ -38,6 +39,11 @@ builder.Services.AddSingleton<IMarketDataService, MarketDataService>();
 builder.Services.AddSingleton<IIbkrContractIdDownloadService, IbkrContractIdDownloadService>();
 builder.Services.AddSingleton<IIbkrBarDownloadService, IbkrBarDownloadService>();
 builder.Services.AddSingleton<IMarketDataFetchService, MarketDataFetchService>();
+builder.Services.AddSingleton<ITimeProvider>(_ =>
+{
+    var timeZoneId = builder.Configuration["TimeProvider:TimeZoneId"];
+    return new SystemTimeProvider(timeZoneId);
+});
 
 builder
     .Services.AddHttpClient<IbkrDownloadService>(

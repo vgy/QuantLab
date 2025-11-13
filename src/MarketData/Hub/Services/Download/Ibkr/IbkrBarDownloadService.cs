@@ -2,6 +2,7 @@ namespace QuantLab.MarketData.Hub.Services.Download.Ibkr;
 
 using System.Text.Json;
 using Microsoft.Extensions.Options;
+using QuantLab.MarketData.Hub.Infrastructure.Time;
 using QuantLab.MarketData.Hub.Models.Config;
 using QuantLab.MarketData.Hub.Models.Domain;
 using QuantLab.MarketData.Hub.Models.DTO.Responses;
@@ -13,6 +14,7 @@ public sealed class IbkrBarDownloadService(
     IDownloadQueue<ResponseData> downloadQueue,
     IServiceProvider serviceProvider,
     ICsvFileService fileService,
+    ITimeProvider timeProvider,
     IOptions<FileStorageSettings> fileStorageSettings,
     IOptions<IbkrApiSettings> ibkrApiSettings,
     ILogger<IbkrContractIdDownloadService> logger
@@ -21,6 +23,7 @@ public sealed class IbkrBarDownloadService(
     private readonly IDownloadQueue<ResponseData> _downloadQueue = downloadQueue;
     private readonly IServiceProvider _serviceProvider = serviceProvider;
     private readonly ICsvFileService _fileService = fileService;
+    private readonly ITimeProvider _timeProvider = timeProvider;
     private readonly ILogger<IbkrContractIdDownloadService> _logger = logger;
     private readonly string _retrySymbolsAndContractIdsFileName = fileStorageSettings
         .Value
@@ -38,6 +41,7 @@ public sealed class IbkrBarDownloadService(
         string inputFileName
     )
     {
+        var startTime = _timeProvider.Now;
         var symbols = await _fileService.ReadAsync(
             inputFileName,
             a => new Symbol(a[0], int.Parse(a[1]))
@@ -109,7 +113,11 @@ public sealed class IbkrBarDownloadService(
         var matchedKeys = results.Select(t => t[0].Symbol).ToHashSet();
         var unavailableSymbols = symbols.Where(x => !matchedKeys.Contains(x.Name)).ToList();
         await _fileService.WriteAsync(_retrySymbolsAndContractIdsFileName, unavailableSymbols);
-        return $"Retrieved Historical Bars of {barInterval.ToShortString()} for {results.Count} of {symbols.Count()} symbols";
+        var endTime = _timeProvider.Now;
+        _logger.LogInformation(
+            $" DownloadHistoricalBarAsync for {barInterval.ToShortString()} - Started: {startTime:yyyy-MM-dd HH:mm:ss}, Ended: {endTime:yyyy-MM-dd HH:mm:ss}"
+        );
+        return $"{startTime:yyyy-MM-dd HH:mm:ss}: Retrieved Historical Bars of {barInterval.ToShortString()} for {results.Count} of {symbols.Count()} symbols";
     }
 
     private string BuildUrl(int conId, BarInterval barInterval, string? startTime = null)

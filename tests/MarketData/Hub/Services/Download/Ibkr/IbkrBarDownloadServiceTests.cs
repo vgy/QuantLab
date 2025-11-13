@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
+using QuantLab.MarketData.Hub.Infrastructure.Time;
 using QuantLab.MarketData.Hub.Models.Config;
 using QuantLab.MarketData.Hub.Models.Domain;
 using QuantLab.MarketData.Hub.Models.DTO.Responses;
@@ -25,6 +26,7 @@ public class IbkrBarDownloadServiceTests
 {
     private Mock<IDownloadQueue<ResponseData>> _downloadQueueMock = null!;
     private Mock<ICsvFileService> _csvFileServiceMock = null!;
+    private Mock<ITimeProvider> _timeProviderMock = null!;
     private Mock<IOptions<FileStorageSettings>> _fileStorageSettingsMock = null!;
     private Mock<IOptions<IbkrApiSettings>> _ibkrApiSettingsMock = null!;
     private Mock<ILogger<IbkrContractIdDownloadService>> _loggerMock = null!;
@@ -41,6 +43,7 @@ public class IbkrBarDownloadServiceTests
     {
         _downloadQueueMock = new();
         _csvFileServiceMock = new();
+        _timeProviderMock = new();
         _fileStorageSettingsMock = new();
         _ibkrApiSettingsMock = new();
         _loggerMock = new();
@@ -67,6 +70,7 @@ public class IbkrBarDownloadServiceTests
             _downloadQueueMock.Object,
             _serviceProviderMock,
             _csvFileServiceMock.Object,
+            _timeProviderMock.Object,
             _fileStorageSettingsMock.Object,
             _ibkrApiSettingsMock.Object,
             _loggerMock.Object
@@ -169,6 +173,8 @@ public class IbkrBarDownloadServiceTests
             )
             .ReturnsAsync(symbols);
 
+        _timeProviderMock.Setup(tp => tp.Now).Returns(new DateTime(2025, 11, 07, 09, 42, 04));
+
         var emptyResponse = new ResponseData(
             "RELIANCE",
             new() { { "data", CreateEmptyJsonElement() } }
@@ -185,7 +191,9 @@ public class IbkrBarDownloadServiceTests
         );
 
         // Assert
-        result.Should().Contain("Retrieved Historical Bars of 5m for 0 of 1 symbols");
+        result
+            .Should()
+            .Contain("2025-11-07 09:42:04: Retrieved Historical Bars of 5m for 0 of 1 symbols");
 
         _csvFileServiceMock.Verify(
             f =>
@@ -213,6 +221,8 @@ public class IbkrBarDownloadServiceTests
             )
             .ReturnsAsync(symbols);
 
+        _timeProviderMock.Setup(tp => tp.Now).Returns(new DateTime(2025, 11, 07, 07, 42, 04));
+
         var badJson = new JsonElement(); // Invalid JSON (default)
         var badResponse = new ResponseData("INFY", new() { { "data", badJson } });
 
@@ -227,7 +237,9 @@ public class IbkrBarDownloadServiceTests
         );
 
         // Assert
-        result.Should().Contain("Retrieved Historical Bars of 1d for 0 of 1 symbols");
+        result
+            .Should()
+            .Contain("2025-11-07 07:42:04: Retrieved Historical Bars of 1d for 0 of 1 symbols");
         _loggerMock.VerifyLog(LogLevel.Error, "Parse error");
     }
 
@@ -295,6 +307,7 @@ public class IbkrBarDownloadServiceTests
                 )
             )
             .ReturnsAsync(symbols);
+        _timeProviderMock.Setup(tp => tp.Now).Returns(new DateTime(2025, 11, 07, 09, 42, 04));
 
         var goodResponse = new ResponseData("INFY", new() { { "data", CreateValidJsonElement() } });
         var badResponse = new ResponseData("TCS", new() { { "data", CreateEmptyJsonElement() } });
@@ -315,7 +328,9 @@ public class IbkrBarDownloadServiceTests
         );
 
         // Assert
-        result.Should().Contain("Retrieved Historical Bars of 5m for 1 of 3 symbols");
+        result
+            .Should()
+            .Contain("2025-11-07 09:42:04: Retrieved Historical Bars of 5m for 1 of 3 symbols");
 
         _csvFileServiceMock.Verify(
             f =>
@@ -407,6 +422,7 @@ public class IbkrBarDownloadServiceTests
                 )
             )
             .ReturnsAsync(symbols);
+        _timeProviderMock.Setup(tp => tp.Now).Returns(new DateTime(2025, 11, 07, 09, 42, 04));
 
         _downloadQueueMock
             .Setup(q => q.QueueAsync(It.IsAny<Func<CancellationToken, Task<ResponseData>>>()))
@@ -419,7 +435,9 @@ public class IbkrBarDownloadServiceTests
         );
 
         // Assert
-        result.Should().Contain("Retrieved Historical Bars of 1d for 0 of 1 symbols");
+        result
+            .Should()
+            .Contain("2025-11-07 09:42:04: Retrieved Historical Bars of 1d for 0 of 1 symbols");
 
         _csvFileServiceMock.Verify(
             f =>
