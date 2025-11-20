@@ -12,14 +12,14 @@ using BarGrpc = QuantLab.Protos.MarketData.Bar;
 [TestFixture]
 public class BarExtensionsTests
 {
-    [TestCase("ABC", "1d", 123465789, 28.5, 3168, 0.2199, 31.29, 879846)]
-    [TestCase("XYW", "1h", 987654321, 38.5, 4149, 0.3149, 41.24, 456789)]
-    [TestCase("QSD", "5min", 123465798, 48.5, 5168, 0.4191, 51.99, 123465)]
-    [TestCase("ZSX", "15min", 123465798, 48.5, 5168, 0.4191, 51.99, 123465)]
+    [TestCase("ABC", "1d", "2025-11-20 15:45:30", 28.5, 3168, 0.2199, 31.29, 879846)]
+    [TestCase("XYW", "1h", "2025-11-11 09:45:30", 38.5, 4149, 0.3149, 41.24, 456789)]
+    [TestCase("QSD", "5min", "2025-11-20 12:00:30", 48.5, 5168, 0.4191, 51.99, 123465)]
+    [TestCase("ZSX", "15min", "2025-01-01 01:00:00", 48.5, 5168, 0.4191, 51.99, 123465)]
     public void ToProto_ValidBar_ShouldMapAllFieldsCorrectly(
         string symbol,
         string interval,
-        long timestamp,
+        string timestamp,
         decimal open,
         decimal high,
         decimal low,
@@ -65,9 +65,36 @@ public class BarExtensionsTests
         // Arrange
         var bars = new[]
         {
-            new Bar("BTCUSD", BarInterval.OneDay, 111, 1.23m, 1.5m, 1.1m, 1.4m, 1000),
-            new Bar("ETHUSD", BarInterval.OneDay, 222, 2.23m, 2.5m, 2.1m, 2.4m, 2000),
-            new Bar("DOGEUSD", BarInterval.OneDay, 333, 0.123m, 0.15m, 0.11m, 0.14m, 3000),
+            new Bar(
+                "BTCUSD",
+                BarInterval.OneDay,
+                "2025-11-20 05:45:30",
+                1.23m,
+                1.5m,
+                1.1m,
+                1.4m,
+                1000
+            ),
+            new Bar(
+                "ETHUSD",
+                BarInterval.OneDay,
+                "2025-04-06 09:45:30",
+                2.23m,
+                2.5m,
+                2.1m,
+                2.4m,
+                2000
+            ),
+            new Bar(
+                "DOGEUSD",
+                BarInterval.OneDay,
+                "2025-11-20 01:00:00",
+                0.123m,
+                0.15m,
+                0.11m,
+                0.14m,
+                3000
+            ),
         };
 
         var target = new RepeatedField<BarGrpc>();
@@ -104,7 +131,7 @@ public class BarExtensionsTests
             .Select(i => new Bar(
                 $"SYM{i}",
                 BarInterval.FiveMinutes,
-                i,
+                "2025-11-20 01:00:00",
                 10m + i,
                 11m + i,
                 9m + i,

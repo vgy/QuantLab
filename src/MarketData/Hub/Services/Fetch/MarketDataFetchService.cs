@@ -57,7 +57,6 @@ public sealed class MarketDataFetchService(
         if (
             values.Length != 8
             || !BarIntervalConverter.TryParse(values[1], out BarInterval interval)
-            || !long.TryParse(values[2], out long timestamp)
             || !decimal.TryParse(values[3], out decimal open)
             || !decimal.TryParse(values[4], out decimal high)
             || !decimal.TryParse(values[5], out decimal low)
@@ -74,7 +73,7 @@ public sealed class MarketDataFetchService(
         {
             Symbol = values[0],
             Interval = interval,
-            Timestamp = timestamp,
+            Timestamp = values[2],
             Open = open,
             High = high,
             Low = low,

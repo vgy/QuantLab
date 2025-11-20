@@ -210,14 +210,14 @@ public class MarketDataFetchServiceTests
         );
     }
 
-    [TestCase("ABC", "1d", 123465789, 28.5, 31.68, 21.99, 31.29, 879846)]
-    [TestCase("XYW", "1h", 987654321, 38.5, 41.49, 31.49, 41.20, 456789)]
-    [TestCase("QSD", "5min", 123465798, 48.5, 51.68, 41.90, 51.99, 123465)]
-    [TestCase("ZSX", "15min", 123465798, 48.5, 51.68, 41.90, 51.99, 123465)]
+    [TestCase("ABC", "1d", "2025-11-20 15:45:30", 28.5, 31.68, 21.99, 31.29, 879846)]
+    [TestCase("XYW", "1h", "2025-01-20 01:00:00", 38.5, 41.49, 31.49, 41.20, 456789)]
+    [TestCase("QSD", "5min", "2025-10-18 10:45:30", 48.5, 51.68, 41.90, 51.99, 123465)]
+    [TestCase("ZSX", "15min", "2025-11-20 20:45:00", 48.5, 51.68, 41.90, 51.99, 123465)]
     public void ParseResponseData_ValidValues_ReturnsBar(
         string symbol,
         string interval,
-        long timestamp,
+        string timestamp,
         decimal open,
         decimal high,
         decimal low,
@@ -242,7 +242,7 @@ public class MarketDataFetchServiceTests
         [
             symbol,
             interval,
-            timestamp.ToString(),
+            timestamp,
             open.ToString(),
             high.ToString(),
             low.ToString(),
@@ -275,7 +275,7 @@ public class MarketDataFetchServiceTests
             .WithMessage($"Parsing error in {string.Join(',', values)} of {fileName}");
     }
 
-    [TestCase("ABC", "1d", "abcdefgh", "28.5", "31.68", "21.99", "31.29", "879846")]
+    [TestCase("ABC", "ab", "123456789", "28.5", "31.68", "21.99", "31.29", "879846")]
     [TestCase("XYW", "1h", "987654321", "abc", "41.49", "31.49", "41.20", "456789")]
     [TestCase("QSD", "5m", "123465798", "48.5", "defg", "41.90", "51.99", "123465")]
     [TestCase("QSD", "5m", "123465798", "48.5", "51.68", "hijkl", "51.99", "123465")]

@@ -278,6 +278,30 @@ public class IbkrBarDownloadServiceTests
         bars[0].Symbol.Should().Be("INFY");
     }
 
+    [TestCase(1759117500000, "2025-09-29 09:15:00")]
+    [TestCase(1759118400000, "2025-09-29 09:30:00")]
+    [TestCase(1759119300000, "2025-09-29 09:45:00")]
+    [TestCase(1759121100000, "2025-09-29 10:15:00")]
+    public void ParseResponseData_ValidResponseWithTimestamp_ReturnsBars(
+        long timestamp,
+        string dateTime
+    )
+    {
+        // Arrange
+        var response = new ResponseData(
+            "INFY",
+            new() { { "data", CreateValidJsonElementWithTimestamp(timestamp) } }
+        );
+
+        // Act
+        var bars = InvokeParseResponseData(BarInterval.OneHour, response);
+
+        // Assert
+        bars.Should().HaveCount(1);
+        bars[0].Symbol.Should().Be("INFY");
+        bars[0].Timestamp.Should().Be(dateTime);
+    }
+
     [Test]
     public void ParseResponseData_NoData_ReturnsEmptyList()
     {
@@ -517,6 +541,14 @@ public class IbkrBarDownloadServiceTests
                 $"{HistoricalMarketDataEndPoint}?conid=505&exchange=NSE&period=1m&bar=15min"
             );
         }
+    }
+
+    private static JsonElement CreateValidJsonElementWithTimestamp(long timestamp)
+    {
+        var json =
+            $"[{{\"t\": {timestamp}, \"o\": 100.1, \"h\": 101.5, \"l\": 99.8, \"c\": 100.9, \"v\": 1000}}]";
+        using var doc = JsonDocument.Parse(json);
+        return doc.RootElement.Clone();
     }
 
     private static JsonElement CreateValidJsonElement()

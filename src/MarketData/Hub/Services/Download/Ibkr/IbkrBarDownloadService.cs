@@ -184,7 +184,7 @@ public sealed class IbkrBarDownloadService(
                     .Select(item => new Bar(
                         symbol,
                         barInterval,
-                        item.GetProperty("t").GetInt64(),
+                        ToIST(item.GetProperty("t").GetInt64()),
                         item.GetProperty("o").GetDecimal(),
                         item.GetProperty("h").GetDecimal(),
                         item.GetProperty("l").GetDecimal(),
@@ -203,5 +203,13 @@ public sealed class IbkrBarDownloadService(
             _logger.LogError(ex, "Parse error for {symbol}", symbol);
         }
         return [];
+    }
+
+    private static string ToIST(long unixMs)
+    {
+        DateTimeOffset utcTime = DateTimeOffset.FromUnixTimeMilliseconds(unixMs);
+        TimeZoneInfo istZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time");
+        DateTime istTime = TimeZoneInfo.ConvertTime(utcTime, istZone).DateTime;
+        return istTime.ToString("yyyy-MM-dd HH:mm:ss");
     }
 }

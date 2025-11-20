@@ -42,7 +42,7 @@ public class MarketDataGrpcServiceTests
             {
                 Symbol = symbol,
                 Interval = barInterval,
-                Timestamp = 123456789,
+                Timestamp = "2025-11-20 01:45:30",
                 Open = 12.45m,
                 High = 29.46m,
                 Low = 1.28m,
@@ -53,7 +53,7 @@ public class MarketDataGrpcServiceTests
             {
                 Symbol = symbol,
                 Interval = barInterval,
-                Timestamp = 987654321,
+                Timestamp = "2025-01-01 01:00:00",
                 Open = 14.45m,
                 High = 31.46m,
                 Low = 4.28m,
