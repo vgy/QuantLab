@@ -22,7 +22,8 @@ public class MarketDataControllerTests
 
     [TestCase("ABC", "1d")]
     [TestCase("XYZ", "1h")]
-    [TestCase("QSD", "5m")]
+    [TestCase("QSD", "5min")]
+    [TestCase("ZSX", "15min")]
     public async Task GetMarketData_ValidParameters_ReturnsOkWithMessage(
         string symbol,
         string interval

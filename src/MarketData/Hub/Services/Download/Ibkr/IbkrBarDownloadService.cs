@@ -104,7 +104,7 @@ public sealed class IbkrBarDownloadService(
             var bar = result[0];
             var relativePath = string.Format(
                 _historicalBarsRelativePathTemplate,
-                bar.Interval,
+                bar.Interval.ToShortString(),
                 bar.Symbol
             );
             await _fileService.WriteAsync(relativePath, result);
@@ -124,7 +124,8 @@ public sealed class IbkrBarDownloadService(
     {
         (string period, string bar) = barInterval switch
         {
-            BarInterval.FiveMinutes => ("2d", "5m"),
+            BarInterval.FiveMinutes => ("1w", "5min"),
+            BarInterval.FifteenMinutes => ("1m", "15min"),
             BarInterval.OneHour => ("1m", "1h"),
             BarInterval.OneDay => ("1y", "1d"),
             _ => ("1y", "1d"),

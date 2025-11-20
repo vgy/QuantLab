@@ -6,10 +6,11 @@ using QuantLab.MarketData.Hub.Models.Domain;
 [TestFixture]
 public class BarIntervalConverterTests
 {
-    [TestCase(BarInterval.FiveMinutes, "5m")]
+    [TestCase(BarInterval.FiveMinutes, "5min")]
+    [TestCase(BarInterval.FifteenMinutes, "15min")]
     [TestCase(BarInterval.OneHour, "1h")]
     [TestCase(BarInterval.OneDay, "1d")]
-    [TestCase(default(BarInterval), "5m")]
+    [TestCase(default(BarInterval), "5min")]
     public void ToShortString_WhenCalled_ReturnsCorrespondingShortString(
         BarInterval barInterval,
         string expectedShortString
@@ -19,12 +20,12 @@ public class BarIntervalConverterTests
         barInterval.ToShortString().Should().Be(expectedShortString);
     }
 
-    [TestCase("5m", true, BarInterval.FiveMinutes)]
+    [TestCase("5min", true, BarInterval.FiveMinutes)]
+    [TestCase("15min", true, BarInterval.FifteenMinutes)]
     [TestCase("1h", true, BarInterval.OneHour)]
     [TestCase("1d", true, BarInterval.OneDay)]
-    [TestCase("1m", false, BarInterval.FiveMinutes)]
-    [TestCase("15m", false, BarInterval.FiveMinutes)]
-    [TestCase("30m", false, BarInterval.FiveMinutes)]
+    [TestCase("1min", false, BarInterval.FiveMinutes)]
+    [TestCase("30min", false, BarInterval.FiveMinutes)]
     [TestCase("2h", false, BarInterval.FiveMinutes)]
     [TestCase("4h", false, BarInterval.FiveMinutes)]
     [TestCase("6h", false, BarInterval.FiveMinutes)]

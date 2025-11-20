@@ -193,7 +193,7 @@ public class IbkrBarDownloadServiceTests
         // Assert
         result
             .Should()
-            .Contain("2025-11-07 09:42:04: Retrieved Historical Bars of 5m for 0 of 1 symbols");
+            .Contain("2025-11-07 09:42:04: Retrieved Historical Bars of 5min for 0 of 1 symbols");
 
         _csvFileServiceMock.Verify(
             f =>
@@ -330,7 +330,7 @@ public class IbkrBarDownloadServiceTests
         // Assert
         result
             .Should()
-            .Contain("2025-11-07 09:42:04: Retrieved Historical Bars of 5m for 1 of 3 symbols");
+            .Contain("2025-11-07 09:42:04: Retrieved Historical Bars of 5min for 1 of 3 symbols");
 
         _csvFileServiceMock.Verify(
             f =>
@@ -499,7 +499,7 @@ public class IbkrBarDownloadServiceTests
             yield return new TestCaseData(
                 202,
                 BarInterval.FiveMinutes,
-                $"{HistoricalMarketDataEndPoint}?conid=202&exchange=NSE&period=2d&bar=5m"
+                $"{HistoricalMarketDataEndPoint}?conid=202&exchange=NSE&period=1w&bar=5min"
             );
             yield return new TestCaseData(
                 303,
@@ -510,6 +510,11 @@ public class IbkrBarDownloadServiceTests
                 404,
                 BarInterval.OneDay,
                 $"{HistoricalMarketDataEndPoint}?conid=404&exchange=NSE&period=1y&bar=1d"
+            );
+            yield return new TestCaseData(
+                505,
+                BarInterval.FifteenMinutes,
+                $"{HistoricalMarketDataEndPoint}?conid=505&exchange=NSE&period=1m&bar=15min"
             );
         }
     }

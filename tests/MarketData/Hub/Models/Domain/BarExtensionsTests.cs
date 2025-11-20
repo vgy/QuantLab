@@ -14,7 +14,8 @@ public class BarExtensionsTests
 {
     [TestCase("ABC", "1d", 123465789, 28.5, 3168, 0.2199, 31.29, 879846)]
     [TestCase("XYW", "1h", 987654321, 38.5, 4149, 0.3149, 41.24, 456789)]
-    [TestCase("QSD", "5m", 123465798, 48.5, 5168, 0.4191, 51.99, 123465)]
+    [TestCase("QSD", "5min", 123465798, 48.5, 5168, 0.4191, 51.99, 123465)]
+    [TestCase("ZSX", "15min", 123465798, 48.5, 5168, 0.4191, 51.99, 123465)]
     public void ToProto_ValidBar_ShouldMapAllFieldsCorrectly(
         string symbol,
         string interval,

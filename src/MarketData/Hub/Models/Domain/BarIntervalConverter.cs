@@ -8,7 +8,8 @@ public static class BarIntervalConverter
     public static string ToShortString(this BarInterval interval) =>
         interval switch
         {
-            BarInterval.FiveMinutes => "5m",
+            BarInterval.FiveMinutes => "5min",
+            BarInterval.FifteenMinutes => "15min",
             BarInterval.OneHour => "1h",
             BarInterval.OneDay => "1d",
             _ => "5m",
@@ -22,9 +23,14 @@ public static class BarIntervalConverter
             barInterval = default;
             return false;
         }
-        else if (s.Equals("5m".AsSpan(), StringComparison.Ordinal))
+        else if (s.Equals("5min".AsSpan(), StringComparison.Ordinal))
         {
             barInterval = BarInterval.FiveMinutes;
+            return true;
+        }
+        else if (s.Equals("15min".AsSpan(), StringComparison.Ordinal))
+        {
+            barInterval = BarInterval.FifteenMinutes;
             return true;
         }
         else if (s.Equals("1h".AsSpan(), StringComparison.Ordinal))

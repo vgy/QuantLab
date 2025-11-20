@@ -41,7 +41,8 @@ public class MarketDataFetchServiceTests
 
     [TestCase("ABC", "1d")]
     [TestCase("XYZ", "1h")]
-    [TestCase("QSD", "5m")]
+    [TestCase("QSD", "5min")]
+    [TestCase("ZSX", "15min")]
     public async Task GetDataAsync_ValidParameters_ReturnsBars(string symbol, string interval)
     {
         // Arrange
@@ -121,7 +122,8 @@ public class MarketDataFetchServiceTests
 
     [TestCase("ABC", "1d")]
     [TestCase("XYZ", "1h")]
-    [TestCase("QSD", "5m")]
+    [TestCase("QSD", "5min")]
+    [TestCase("ZSX", "15min")]
     public async Task GetDataAsync_WhenCsvFileServiceReturnsEmptyList_ReturnsEmptyList(
         string symbol,
         string interval
@@ -165,7 +167,8 @@ public class MarketDataFetchServiceTests
 
     [TestCase("ABC", "1d")]
     [TestCase("XYZ", "1h")]
-    [TestCase("QSD", "5m")]
+    [TestCase("QSD", "5min")]
+    [TestCase("ZSX", "15min")]
     public async Task GetDataAsync_WhenCsvFileServiceThrowsException_ReturnsEmptyList(
         string symbol,
         string interval
@@ -209,7 +212,8 @@ public class MarketDataFetchServiceTests
 
     [TestCase("ABC", "1d", 123465789, 28.5, 31.68, 21.99, 31.29, 879846)]
     [TestCase("XYW", "1h", 987654321, 38.5, 41.49, 31.49, 41.20, 456789)]
-    [TestCase("QSD", "5m", 123465798, 48.5, 51.68, 41.90, 51.99, 123465)]
+    [TestCase("QSD", "5min", 123465798, 48.5, 51.68, 41.90, 51.99, 123465)]
+    [TestCase("ZSX", "15min", 123465798, 48.5, 51.68, 41.90, 51.99, 123465)]
     public void ParseResponseData_ValidValues_ReturnsBar(
         string symbol,
         string interval,

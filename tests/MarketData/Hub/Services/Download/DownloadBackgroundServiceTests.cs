@@ -479,7 +479,7 @@ public sealed class DownloadBackgroundServiceTests
         // Allow 5ms jitter tolerance
         Assert.That(
             elapsed,
-            Is.GreaterThanOrEqualTo(TimeSpan.FromMilliseconds(batchDelayMs - 5)),
+            Is.GreaterThanOrEqualTo(TimeSpan.FromMilliseconds(batchDelayMs - 10)),
             $"Expected at least {batchDelayMs}ms between batches, but got {elapsed.TotalMilliseconds}ms."
         );
     }

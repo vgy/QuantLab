@@ -25,7 +25,8 @@ public class MarketDataGrpcServiceTests
         _marketDataGrpcService = new(_marketDataFetchServiceMock.Object);
     }
 
-    [TestCase("ABC", "5m")]
+    [TestCase("ABC", "5min")]
+    [TestCase("ZSX", "15min")]
     [TestCase("DEF", "1d")]
     [TestCase("XYZ", "1h")]
     public async Task GetMarketData_WhenCalledWithValidBarInterval_ReturnsExpectedMessage(
