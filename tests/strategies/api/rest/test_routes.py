@@ -9,11 +9,16 @@ def mock_strategy_service():
     """Fixture that returns a mock strategy service."""
     return Mock()
 
+@pytest.fixture
+def mock_downsampling_service():
+    """Fixture that returns a mock strategy service."""
+    return Mock()
+
 
 @pytest.fixture
-def client(mock_strategy_service):
+def client(mock_strategy_service, mock_downsampling_service):
     """Fixture that returns a FastAPI TestClient with a mocked strategy service."""
-    app = create_app(mock_strategy_service)
+    app = create_app(mock_strategy_service, mock_downsampling_service)
     return TestClient(app, raise_server_exceptions=False)
 
 def test_get_strategies_ValidRequest_ReturnsStrategiesResponse(client, mock_strategy_service):
@@ -111,9 +116,9 @@ def test_get_symbols_for_strategy_and_interval_ServiceRaisesException_ReturnsInt
     mock_strategy_service.get_symbols_for_strategy_and_interval.assert_called_once_with(strategy, interval)
 
 
-def test_app_Metadata_IsSetCorrectly(mock_strategy_service):
+def test_app_Metadata_IsSetCorrectly(mock_strategy_service, mock_downsampling_service):
     # Arrange
-    app = create_app(mock_strategy_service)
+    app = create_app(mock_strategy_service, mock_downsampling_service)
 
     # Act
     title = app.title
@@ -137,3 +142,36 @@ def test_cors_HeadersIncludedInResponse(client, mock_strategy_service):
     assert response.status_code == 200
     assert "access-control-allow-origin" in response.headers
     assert response.headers["access-control-allow-origin"] == "*"
+
+@pytest.mark.parametrize(
+    "input_interval,output_interval",
+    [
+        ("5min", "15min"),
+        ("15min", "30min"),
+        ("15min", "1h"),
+    ],
+)
+def test_write_downsampling_ValidRequest_ReturnsDownsamplingResponse(client, mock_downsampling_service, input_interval, output_interval):
+    # Arrange
+    mock_downsampling_service.write_downsampling.return_value = "successful"
+
+    # Act
+    response = client.post(f"/downsampling/{input_interval}/{output_interval}")
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert "message" in data
+    assert data["message"] == "successful"
+    mock_downsampling_service.write_downsampling.assert_called_once()
+
+
+def test_write_downsampling_ServiceRaisesException_ReturnsInternalServerError(client, mock_downsampling_service):
+    # Arrange
+    mock_downsampling_service.write_downsampling.side_effect = Exception("Database error")
+
+    # Act
+    response = client.post("/downsampling/15min/1h")
+
+    # Assert
+    assert response.status_code == 500  # FastAPI default for unhandled exceptions

@@ -1,9 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from strategies.schemas.strategy_schema import StrategiesResponse, SymbolsResponse
+from strategies.schemas.downsampling_schema import DownsamplingResponse
 from loguru import logger
 
-def create_app(strategy_service):
+def create_app(strategy_service, downsampling_service):
     app = FastAPI(title="Strategies Service", version="1.0")
 
     # Enable CORS
@@ -28,5 +29,11 @@ def create_app(strategy_service):
         symbols = strategy_service.get_symbols_for_strategy_and_interval(strategy, interval)
         message = f"Returns {len(symbols)} symbols for strategy '{strategy}' and '{interval}"
         return SymbolsResponse(message = message, symbols = symbols)
+
+    @app.post("/downsampling/{input_interval}/{output_interval}", response_model = DownsamplingResponse)
+    def write_downsampling(input_interval : str, output_interval : str):
+        logger.info("REST: write_downsampling is called")
+        message = downsampling_service.write_downsampling(input_interval, output_interval)
+        return DownsamplingResponse(message = message)
 
     return app
