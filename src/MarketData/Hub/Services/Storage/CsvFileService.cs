@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using Microsoft.Extensions.Options;
 using QuantLab.MarketData.Hub.Models.Config;
+using QuantLab.MarketData.Hub.Models.Domain;
 using QuantLab.MarketData.Hub.Services.Interface.Storage;
 
 public class CsvFileService(
@@ -42,7 +43,12 @@ public class CsvFileService(
             var values = properties.Select(p =>
             {
                 var value = p.GetValue(record);
-                return value is null ? "" : value.ToString()!;
+                return value switch
+                {
+                    null => "",
+                    BarInterval interval => interval.ToShortString(),
+                    _ => value.ToString()!,
+                };
             });
             sb.AppendLine(string.Join(",", values));
         }

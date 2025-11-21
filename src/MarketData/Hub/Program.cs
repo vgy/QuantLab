@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using QuantLab.MarketData.Hub.Grpc;
 using QuantLab.MarketData.Hub.Infrastructure.Time;
 using QuantLab.MarketData.Hub.Models.Config;
+using QuantLab.MarketData.Hub.Models.Domain;
 using QuantLab.MarketData.Hub.Models.DTO.Responses;
 using QuantLab.MarketData.Hub.Services;
 using QuantLab.MarketData.Hub.Services.Download;
@@ -28,7 +29,13 @@ builder.Services.Configure<DownloadServiceSettings>(
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-builder.Services.AddControllers();
+builder
+    .Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new BarIntervalJsonConverter());
+    });
+
 builder.Services.AddGrpc();
 builder.Services.AddHttpClient();
 

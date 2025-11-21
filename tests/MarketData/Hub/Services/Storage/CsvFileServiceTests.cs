@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
 using QuantLab.MarketData.Hub.Models.Config;
+using QuantLab.MarketData.Hub.Models.Domain;
 using QuantLab.MarketData.Hub.Services.Storage;
 
 public class CsvFileServiceTests
@@ -75,8 +76,18 @@ public class CsvFileServiceTests
         {
             var records = new[]
             {
-                new TestRecord { A = 1, B = "hello" },
-                new TestRecord { A = 2, B = "world" },
+                new TestRecord
+                {
+                    A = 1,
+                    B = "hello",
+                    C = BarInterval.FifteenMinutes,
+                },
+                new TestRecord
+                {
+                    A = 2,
+                    B = "world",
+                    C = BarInterval.OneDay,
+                },
             };
 
             // Act
@@ -87,9 +98,9 @@ public class CsvFileServiceTests
             var text = await File.ReadAllTextAsync(filePath);
             var lines = text.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
             Assert.That(lines.Length, Is.EqualTo(3)); // header + 2 records
-            Assert.That(lines[0], Is.EqualTo("A,B"));
-            Assert.That(lines[1], Is.EqualTo("1,hello"));
-            Assert.That(lines[2], Is.EqualTo("2,world"));
+            Assert.That(lines[0], Is.EqualTo("A,B,C"));
+            Assert.That(lines[1], Is.EqualTo("1,hello,15min"));
+            Assert.That(lines[2], Is.EqualTo("2,world,1d"));
         }
         finally
         {
@@ -158,7 +169,7 @@ public class CsvFileServiceTests
         try
         {
             // Create a file manually
-            var lines = new[] { "A,B", "1,foo", "2,bar" };
+            var lines = new[] { "A,B,C", "1,foo,15min", "2,bar,1d" };
             await File.WriteAllLinesAsync(filePath, lines);
 
             // Act
@@ -166,7 +177,14 @@ public class CsvFileServiceTests
                 filePath,
                 cols =>
                 {
-                    return new TestRecord { A = int.Parse(cols[0]), B = cols[1] };
+                    if (!BarIntervalConverter.TryParse(cols[2], out BarInterval interval))
+                        return new TestRecord();
+                    return new TestRecord
+                    {
+                        A = int.Parse(cols[0]),
+                        B = cols[1],
+                        C = interval,
+                    };
                 }
             );
 
@@ -175,8 +193,10 @@ public class CsvFileServiceTests
             Assert.That(list.Count, Is.EqualTo(2));
             Assert.That(list[0].A, Is.EqualTo(1));
             Assert.That(list[0].B, Is.EqualTo("foo"));
+            Assert.That(list[0].C, Is.EqualTo(BarInterval.FifteenMinutes));
             Assert.That(list[1].A, Is.EqualTo(2));
             Assert.That(list[1].B, Is.EqualTo("bar"));
+            Assert.That(list[1].C, Is.EqualTo(BarInterval.OneDay));
         }
         finally
         {
@@ -189,5 +209,6 @@ public class CsvFileServiceTests
     {
         public int A { get; set; }
         public string B { get; set; } = default!;
+        public BarInterval C { get; set; }
     }
 }
