@@ -8,8 +8,11 @@ public class BarIntervalConverterTests
 {
     [TestCase(BarInterval.FiveMinutes, "5min")]
     [TestCase(BarInterval.FifteenMinutes, "15min")]
+    [TestCase(BarInterval.ThirtyMinutes, "30min")]
     [TestCase(BarInterval.OneHour, "1h")]
     [TestCase(BarInterval.OneDay, "1d")]
+    [TestCase(BarInterval.OneWeek, "1w")]
+    [TestCase(BarInterval.OneMonth, "1m")]
     [TestCase(default(BarInterval), "5min")]
     public void ToShortString_WhenCalled_ReturnsCorrespondingShortString(
         BarInterval barInterval,
@@ -25,12 +28,12 @@ public class BarIntervalConverterTests
     [TestCase("1h", true, BarInterval.OneHour)]
     [TestCase("1d", true, BarInterval.OneDay)]
     [TestCase("1min", false, BarInterval.FiveMinutes)]
-    [TestCase("30min", false, BarInterval.FiveMinutes)]
+    [TestCase("30min", true, BarInterval.ThirtyMinutes)]
     [TestCase("2h", false, BarInterval.FiveMinutes)]
     [TestCase("4h", false, BarInterval.FiveMinutes)]
     [TestCase("6h", false, BarInterval.FiveMinutes)]
-    [TestCase("1w", false, BarInterval.FiveMinutes)]
-    [TestCase("1m", false, BarInterval.FiveMinutes)]
+    [TestCase("1w", true, BarInterval.OneWeek)]
+    [TestCase("1m", true, BarInterval.OneMonth)]
     [TestCase("1y", false, BarInterval.FiveMinutes)]
     [TestCase("", false, BarInterval.FiveMinutes)]
     [TestCase("   ", false, BarInterval.FiveMinutes)]

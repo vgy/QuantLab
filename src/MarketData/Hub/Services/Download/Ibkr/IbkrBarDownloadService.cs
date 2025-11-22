@@ -126,8 +126,11 @@ public sealed class IbkrBarDownloadService(
         {
             BarInterval.FiveMinutes => ("1w", "5min"),
             BarInterval.FifteenMinutes => ("1m", "15min"),
+            BarInterval.ThirtyMinutes => ("1m", "30min"),
             BarInterval.OneHour => ("1m", "1h"),
             BarInterval.OneDay => ("1y", "1d"),
+            BarInterval.OneWeek => ("2y", "1w"),
+            BarInterval.OneMonth => ("2y", "1m"),
             _ => ("1y", "1d"),
         };
 

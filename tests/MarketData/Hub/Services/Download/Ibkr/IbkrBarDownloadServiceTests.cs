@@ -517,28 +517,38 @@ public class IbkrBarDownloadServiceTests
         {
             yield return new TestCaseData(
                 101,
-                BarInterval.OneDay,
-                $"{HistoricalMarketDataEndPoint}?conid=101&exchange=NSE&period=1y&bar=1d"
+                BarInterval.FiveMinutes,
+                $"{HistoricalMarketDataEndPoint}?conid=101&exchange=NSE&period=1w&bar=5min"
             );
             yield return new TestCaseData(
                 202,
-                BarInterval.FiveMinutes,
-                $"{HistoricalMarketDataEndPoint}?conid=202&exchange=NSE&period=1w&bar=5min"
+                BarInterval.FifteenMinutes,
+                $"{HistoricalMarketDataEndPoint}?conid=202&exchange=NSE&period=1m&bar=15min"
             );
             yield return new TestCaseData(
                 303,
-                BarInterval.OneHour,
-                $"{HistoricalMarketDataEndPoint}?conid=303&exchange=NSE&period=1m&bar=1h"
+                BarInterval.ThirtyMinutes,
+                $"{HistoricalMarketDataEndPoint}?conid=303&exchange=NSE&period=1m&bar=30min"
             );
             yield return new TestCaseData(
                 404,
-                BarInterval.OneDay,
-                $"{HistoricalMarketDataEndPoint}?conid=404&exchange=NSE&period=1y&bar=1d"
+                BarInterval.OneHour,
+                $"{HistoricalMarketDataEndPoint}?conid=404&exchange=NSE&period=1m&bar=1h"
             );
             yield return new TestCaseData(
                 505,
-                BarInterval.FifteenMinutes,
-                $"{HistoricalMarketDataEndPoint}?conid=505&exchange=NSE&period=1m&bar=15min"
+                BarInterval.OneDay,
+                $"{HistoricalMarketDataEndPoint}?conid=505&exchange=NSE&period=1y&bar=1d"
+            );
+            yield return new TestCaseData(
+                606,
+                BarInterval.OneWeek,
+                $"{HistoricalMarketDataEndPoint}?conid=606&exchange=NSE&period=2y&bar=1w"
+            );
+            yield return new TestCaseData(
+                707,
+                BarInterval.OneMonth,
+                $"{HistoricalMarketDataEndPoint}?conid=707&exchange=NSE&period=2y&bar=1m"
             );
         }
     }
