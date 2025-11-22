@@ -33,6 +33,7 @@ th:nth-child(3),
 td:nth-child(3) {
   width: 50%;
 }
+
 button {
   padding: 8px 16px;
   border: none;

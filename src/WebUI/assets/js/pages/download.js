@@ -1,10 +1,9 @@
 const downloadTypes = [
-  "5m",
-  "5m Retry",
-  "15m",
-  "15m Retry",
-  "1H",
-  "1H Retry",
+  "ContractIds",
+  "5min",
+  "5min Retry",
+  "15min",
+  "15min Retry",
   "1D",
   "1D Retry",
   "1W",
@@ -56,8 +55,11 @@ downloadTypes.forEach((type) => {
       .toLowerCase()
       .replace(/\s*retry\s*/i, "")
       .trim();
+    const isContractids = type.toLowerCase().includes("contractids");
     const isRetry = type.toLowerCase().includes("retry");
-    const url = isRetry
+    const url = isContractids
+      ? `http://localhost:6001/api/download/contractids`
+      : isRetry
       ? `http://localhost:6001/api/download/bars/${baseType}/retry`
       : `http://localhost:6001/api/download/bars/${baseType}`;
 
