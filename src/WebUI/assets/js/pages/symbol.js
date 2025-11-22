@@ -12,9 +12,12 @@ if (!symbol) {
 }
 
 const chartConfigs = [
-  { id: "chart-1h", interval: "1h" },
+  { id: "chart-1w", interval: "1w" },
   { id: "chart-1d", interval: "1d" },
-  { id: "chart-5m", interval: "5m" },
+  { id: "chart-1h", interval: "1h" },
+  { id: "chart-30min", interval: "30min" },
+  { id: "chart-15min", interval: "15min" },
+  { id: "chart-5min", interval: "5min" },
 ];
 
 async function loadCharts() {

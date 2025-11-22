@@ -59,6 +59,16 @@ export async function createChartForSymbol(container, symbol, interval) {
     width: chartDiv.clientWidth,
   });
 
+  chart.applyOptions({
+    timeScale: {
+      ...baseChartOptions.timeScale,
+      tickMarkFormatter: makeISTTickFormatter(interval),
+    },
+    localization: {
+      timeFormatter: makeISTTooltipFormatter(),
+    },
+  });
+
   const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
     upColor: "#26a69a",
     downColor: "#ef5350",
@@ -73,4 +83,77 @@ export async function createChartForSymbol(container, symbol, interval) {
   new ResizeObserver(() => {
     chart.applyOptions({ width: chartDiv.clientWidth });
   }).observe(chartDiv);
+}
+
+function makeISTTickFormatter(interval) {
+  return function (time) {
+    const date = new Date(time * 1000);
+
+    const optionsBase = { timeZone: "Asia/Kolkata", hour12: false };
+
+    if (interval.endsWith("min")) {
+      // Minute timeframe → HH:MM
+      return date.toLocaleString("en-IN", {
+        ...optionsBase,
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+
+    if (interval.endsWith("h") || interval.endsWith("d")) {
+      const day = date.getDate();
+      if (day === 1) {
+        // First day of month → show month only
+        return date.toLocaleString("en-IN", { ...optionsBase, month: "short" });
+      }
+      return date.toLocaleString("en-IN", {
+        ...optionsBase,
+        day: "2-digit",
+      });
+    }
+
+    if (
+      interval.endsWith("w") ||
+      interval.endsWith("m") ||
+      interval.endsWith("y")
+    ) {
+      const day = date.getDate();
+      const month = date.getMonth(); // 0-11
+      if (day === 1 && month === 0) {
+        // 1st day of year → show year only
+        return date.toLocaleString("en-IN", {
+          ...optionsBase,
+          year: "numeric",
+        });
+      }
+      if (day === 1) {
+        // 1st day of month → show short month only
+        return date.toLocaleString("en-IN", { ...optionsBase, month: "short" });
+      }
+      // Normal week/month → show day + month
+      return date.toLocaleString("en-IN", { ...optionsBase, day: "2-digit" });
+    }
+
+    return date.toLocaleString("en-IN", {
+      ...optionsBase,
+      month: "short",
+      year: "numeric",
+    });
+  };
+}
+
+function makeISTTooltipFormatter() {
+  return function (unix) {
+    const d = new Date(unix * 1000);
+    return d.toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+  };
 }

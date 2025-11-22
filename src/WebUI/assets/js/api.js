@@ -42,7 +42,7 @@ export async function fetchSymbolData(symbol, interval = "1d") {
     );
     const data = await response.json();
     return data.bars.map((item) => ({
-      time: item.timestamp / 1000,
+      time: toUnixFromIST(item.timestamp),
       open: item.open,
       high: item.high,
       low: item.low,
@@ -53,4 +53,9 @@ export async function fetchSymbolData(symbol, interval = "1d") {
     console.error(`Error fetching data for ${symbol}:`, err);
     return [];
   }
+}
+
+function toUnixFromIST(istString) {
+  const date = new Date(istString.replace(" ", "T") + "+05:30");
+  return Math.floor(date.getTime() / 1000); // return in seconds
 }
