@@ -1,3 +1,4 @@
+from datetime import datetime
 from loguru import logger
 from typing import Optional
 from strategies.utils.config_loader import load_config
@@ -14,6 +15,8 @@ class DownsamplingService:
 
     def write_downsampling(self, input_interval : str, output_interval : Optional[str] = "1h") -> str:
         try:
+            now = datetime.now()
+            timestamp_str = now.strftime("%Y-%m-%d %H:%M:%S")
             dfs = FileService.read_all_csv(input_interval)
             ds_dfs = [self.downsample(df, output_interval) for df in dfs]
 
@@ -21,7 +24,7 @@ class DownsamplingService:
                 symbol = ds_df.iloc[0]["Symbol"]
                 FileService.write(output_interval, ds_df, f"{output_interval}-{symbol}.csv")
             
-            message = f"DownsamplingService: Downsampled from {input_interval} to {output_interval}"
+            message = f"{timestamp_str}: Downsampled from {input_interval} to {output_interval}"
             logger.info(message)
             return message
         except Exception as e:
