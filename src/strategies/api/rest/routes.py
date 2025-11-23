@@ -4,7 +4,7 @@ from strategies.schemas.strategy_schema import StrategiesResponse, SymbolsRespon
 from strategies.schemas.downsampling_schema import DownsamplingResponse
 from loguru import logger
 
-def create_app(strategy_service, downsampling_service):
+def create_app(strategy_service, downsampling_service, candlestick_patterns_service):
     app = FastAPI(title="Strategies Service", version="1.0")
 
     # Enable CORS
@@ -36,4 +36,11 @@ def create_app(strategy_service, downsampling_service):
         message = downsampling_service.write_downsampling(input_interval, output_interval)
         return DownsamplingResponse(message = message)
 
+    @app.get("/candlestick/{pattern}/{interval}/{period}", response_model = SymbolsResponse)
+    def get_symbols_for_pattern_and_interval(pattern: str, interval: str, period: int):
+        pattern = pattern.upper()
+        logger.info(f"REST: get_symbols_for_pattern_and_interval is called with pattern:{pattern}, interval:{interval} and period:{period}")
+        symbols = candlestick_patterns_service.get_symbols_for_pattern_and_interval(pattern, interval, period)
+        message = f"Returns {len(symbols)} symbols for pattern:{pattern}, interval:{interval} and period:{period}"
+        return SymbolsResponse(message = message, symbols = symbols)
     return app

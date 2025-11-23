@@ -14,11 +14,16 @@ def mock_downsampling_service():
     """Fixture that returns a mock strategy service."""
     return Mock()
 
+@pytest.fixture
+def mock_candlestick_patterns_service():
+    """Fixture that returns a mock strategy service."""
+    return Mock()
+
 
 @pytest.fixture
-def client(mock_strategy_service, mock_downsampling_service):
+def client(mock_strategy_service, mock_downsampling_service, mock_candlestick_patterns_service):
     """Fixture that returns a FastAPI TestClient with a mocked strategy service."""
-    app = create_app(mock_strategy_service, mock_downsampling_service)
+    app = create_app(mock_strategy_service, mock_downsampling_service, mock_candlestick_patterns_service)
     return TestClient(app, raise_server_exceptions=False)
 
 def test_get_strategies_ValidRequest_ReturnsStrategiesResponse(client, mock_strategy_service):
@@ -116,9 +121,9 @@ def test_get_symbols_for_strategy_and_interval_ServiceRaisesException_ReturnsInt
     mock_strategy_service.get_symbols_for_strategy_and_interval.assert_called_once_with(strategy, interval)
 
 
-def test_app_Metadata_IsSetCorrectly(mock_strategy_service, mock_downsampling_service):
+def test_app_Metadata_IsSetCorrectly(mock_strategy_service, mock_downsampling_service, mock_candlestick_patterns_service):
     # Arrange
-    app = create_app(mock_strategy_service, mock_downsampling_service)
+    app = create_app(mock_strategy_service, mock_downsampling_service, mock_candlestick_patterns_service)
 
     # Act
     title = app.title
@@ -175,3 +180,58 @@ def test_write_downsampling_ServiceRaisesException_ReturnsInternalServerError(cl
 
     # Assert
     assert response.status_code == 500  # FastAPI default for unhandled exceptions
+
+def test_get_symbols_for_pattern_and_interval_ValidRequest_ReturnsSymbolsResponse(client, mock_candlestick_patterns_service):
+    # Arrange
+    mock_symbols = ["AAPL", "MSFT", "GOOG"]
+    mock_candlestick_patterns_service.get_symbols_for_pattern_and_interval.return_value = mock_symbols
+
+    pattern = "cdlengulfing"
+    interval = "1d"
+    period=3
+
+    # Act
+    response = client.get(f"/candlestick/{pattern}/{interval}/{period}")
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert "symbols" in data
+    assert len(data["symbols"]) == 3
+    assert f"{len(mock_symbols)} symbols" in data["message"]
+    mock_candlestick_patterns_service.get_symbols_for_pattern_and_interval.assert_called_once_with(pattern.upper(), interval, period)
+
+
+def test_get_symbols_for_pattern_and_interval_EmptySymbols_ReturnsEmptyList(client, mock_candlestick_patterns_service):
+    # Arrange
+    mock_candlestick_patterns_service.get_symbols_for_pattern_and_interval.return_value = []
+
+    pattern = "cdlengulfing"
+    interval = "1d"
+    period=3
+
+    # Act
+    response = client.get(f"/candlestick/{pattern}/{interval}/{period}")
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert data["symbols"] == []
+    assert "Returns 0 symbols" in data["message"]
+    mock_candlestick_patterns_service.get_symbols_for_pattern_and_interval.assert_called_once_with(pattern.upper(), interval, period)
+
+
+def test_get_symbols_for_pattern_and_interval_ServiceRaisesException_ReturnsInternalServerError(client, mock_candlestick_patterns_service):
+    # Arrange
+    mock_candlestick_patterns_service.get_symbols_for_pattern_and_interval.side_effect = Exception("Unexpected error")
+
+    pattern = "cdlengulfing"
+    interval = "1d"
+    period=3
+
+    # Act
+    response = client.get(f"/candlestick/{pattern}/{interval}/{period}")
+
+    # Assert
+    assert response.status_code == 500
+    mock_candlestick_patterns_service.get_symbols_for_pattern_and_interval.assert_called_once_with(pattern.upper(), interval, period)

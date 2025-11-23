@@ -3,6 +3,7 @@ import uvicorn
 from loguru import logger
 from strategies.utils.config_loader import load_config
 from strategies.utils.logger import setup_logger
+from strategies.core.candlestick_patterns_service import CandlestickPatternsService
 from strategies.core.downsampling_service import DownsamplingService
 from strategies.core.strategy_service import StrategyService
 from strategies.api.rest.routes import create_app
@@ -20,6 +21,7 @@ async def main():
     setup_logger(config["logging"]["log_file"], config["logging"]["level"])
 
     # Initialize core services
+    candlestick_patterns_service = CandlestickPatternsService()
     downsampling_service = DownsamplingService()
     strategy_service = StrategyService()
 
@@ -31,7 +33,7 @@ async def main():
     )
 
     # Start REST server (in asyncio loop)
-    app = create_app(strategy_service, downsampling_service)
+    app = create_app(strategy_service, downsampling_service, candlestick_patterns_service)
     rest_task = asyncio.create_task(
         serve_rest(app, config["server"]["rest_host"], config["server"]["rest_port"])
     )
