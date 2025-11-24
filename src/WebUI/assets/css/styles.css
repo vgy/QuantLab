@@ -4,6 +4,12 @@
   box-sizing: border-box;
 }
 
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .chart-container {
   display: flex;
   flex-wrap: wrap;
@@ -41,8 +47,9 @@
 .control-bar {
   display: flex;
   gap: 18px;
-  align-items: flex-end; /* align selects with each other */
+  align-items: center; /* align selects with each other */
   background: white;
+  margin-top: 15px;
   padding: 15px 20px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);

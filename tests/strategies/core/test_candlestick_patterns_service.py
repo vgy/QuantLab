@@ -55,17 +55,19 @@ def test_get_info_InvalidPattern_RaisesKeyError(service):
 # ---------------------------------------------------------------------
 def test_get_symbols_for_pattern_and_interval_InvalidPattern_RaisesKeyError(service):
     # Arrange
+    group = "bullish"
     pattern = "NOT_IN_REVERSE_LOOKUP"
     interval = "1h"
     period = 3
 
     # Act / Assert
     with pytest.raises(KeyError):
-        service.get_symbols_for_pattern_and_interval(pattern, interval, period)
+        service.get_symbols_for_pattern_and_interval(group, pattern, interval, period)
 
 
 def test_get_symbols_for_pattern_and_interval_NonTalibFunction_RaisesValueError(service):
     # Arrange
+    group = "bullish"
     pattern = next(iter(reverse_lookup.keys()))
     interval = "1h"
     period = 3
@@ -78,7 +80,7 @@ def test_get_symbols_for_pattern_and_interval_NonTalibFunction_RaisesValueError(
 
         # Act / Assert
         with pytest.raises(ValueError) as excinfo:
-            service.get_symbols_for_pattern_and_interval(pattern, interval, period)
+            service.get_symbols_for_pattern_and_interval(group, pattern, interval, period)
 
         assert pattern in str(excinfo.value)
 
@@ -96,6 +98,7 @@ def test_get_symbols_for_pattern_and_interval_TalibSignalProcessing_WorksCorrect
     service, mocker, mock_config, values, period, expected
 ):
     # Arrange
+    group = "bullish"
     pattern = next(iter(reverse_lookup.keys()))
     interval = "1h"
     folder = mock_config / interval
@@ -117,7 +120,7 @@ def test_get_symbols_for_pattern_and_interval_TalibSignalProcessing_WorksCorrect
     setattr(talib_mock, pattern, func_mock)
 
     # Act
-    result = service.get_symbols_for_pattern_and_interval(pattern, interval, period)
+    result = service.get_symbols_for_pattern_and_interval(group, pattern, interval, period)
 
     # Assert
     if expected:
@@ -128,6 +131,7 @@ def test_get_symbols_for_pattern_and_interval_TalibSignalProcessing_WorksCorrect
 
 def test_get_symbols_for_pattern_and_interval_EmptyCsvFile_SkipsFile(service, mocker, mock_config):
     # Arrange
+    group = "bullish"
     pattern = next(iter(reverse_lookup.keys()))
     interval = "1h"
     folder = mock_config / interval
@@ -142,7 +146,7 @@ def test_get_symbols_for_pattern_and_interval_EmptyCsvFile_SkipsFile(service, mo
     setattr(talib_mock, pattern, func_mock)
 
     # Act
-    result = service.get_symbols_for_pattern_and_interval(pattern, interval, 2)
+    result = service.get_symbols_for_pattern_and_interval(group, pattern, interval, 2)
 
     # Assert
     assert result == []
@@ -150,6 +154,7 @@ def test_get_symbols_for_pattern_and_interval_EmptyCsvFile_SkipsFile(service, mo
 
 def test_get_symbols_for_pattern_and_interval_MissingColumns_SkipsFile(service, mocker, mock_config):
     # Arrange
+    group = "bullish"
     pattern = next(iter(reverse_lookup.keys()))
     interval = "1h"
     folder = mock_config / interval
@@ -164,7 +169,7 @@ def test_get_symbols_for_pattern_and_interval_MissingColumns_SkipsFile(service, 
     setattr(talib_mock, pattern, func_mock)
 
     # Act
-    result = service.get_symbols_for_pattern_and_interval(pattern, interval, 2)
+    result = service.get_symbols_for_pattern_and_interval(group, pattern, interval, 2)
 
     # Assert
     assert result == []
@@ -172,6 +177,7 @@ def test_get_symbols_for_pattern_and_interval_MissingColumns_SkipsFile(service, 
 
 def test_get_symbols_for_pattern_and_interval_CsvThrowsException_SkipsFile(service, mocker, mock_config):
     # Arrange
+    group = "bullish"
     pattern = next(iter(reverse_lookup.keys()))
     interval = "1h"
     folder = mock_config / interval
@@ -189,7 +195,7 @@ def test_get_symbols_for_pattern_and_interval_CsvThrowsException_SkipsFile(servi
     setattr(talib_mock, pattern, func_mock)
 
     # Act
-    result = service.get_symbols_for_pattern_and_interval(pattern, interval, 1)
+    result = service.get_symbols_for_pattern_and_interval(group, pattern, interval, 1)
 
     # Assert
     assert result == []
@@ -199,6 +205,7 @@ def test_get_symbols_for_pattern_and_interval_MultipleFiles_CorrectSymbolExtract
     service, mocker, mock_config
 ):
     # Arrange
+    group = "bullish"
     pattern = next(iter(reverse_lookup.keys()))
     interval = "1h"
     folder = mock_config / interval
@@ -222,7 +229,7 @@ def test_get_symbols_for_pattern_and_interval_MultipleFiles_CorrectSymbolExtract
     setattr(talib_mock, pattern, func_mock)
 
     # Act
-    result = service.get_symbols_for_pattern_and_interval(pattern, interval, 1)
+    result = service.get_symbols_for_pattern_and_interval(group, pattern, interval, 1)
 
     # Assert
     assert set(result) == {"BTC", "ADA"}

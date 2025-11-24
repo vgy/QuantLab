@@ -186,12 +186,14 @@ def test_get_symbols_for_pattern_and_interval_ValidRequest_ReturnsSymbolsRespons
     mock_symbols = ["AAPL", "MSFT", "GOOG"]
     mock_candlestick_patterns_service.get_symbols_for_pattern_and_interval.return_value = mock_symbols
 
+    group = "bullish"
+    subgroup = "reversal"
     pattern = "cdlengulfing"
     interval = "1d"
     period=3
 
     # Act
-    response = client.get(f"/candlestick/{pattern}/{interval}/{period}")
+    response = client.get(f"/candlestick/{group}/{subgroup}/{pattern}/{interval}/{period}")
 
     # Assert
     assert response.status_code == 200
@@ -199,39 +201,43 @@ def test_get_symbols_for_pattern_and_interval_ValidRequest_ReturnsSymbolsRespons
     assert "symbols" in data
     assert len(data["symbols"]) == 3
     assert f"{len(mock_symbols)} symbols" in data["message"]
-    mock_candlestick_patterns_service.get_symbols_for_pattern_and_interval.assert_called_once_with(pattern.upper(), interval, period)
+    mock_candlestick_patterns_service.get_symbols_for_pattern_and_interval.assert_called_once_with(group, pattern.upper(), interval, period)
 
 
 def test_get_symbols_for_pattern_and_interval_EmptySymbols_ReturnsEmptyList(client, mock_candlestick_patterns_service):
     # Arrange
     mock_candlestick_patterns_service.get_symbols_for_pattern_and_interval.return_value = []
 
+    group = "bullish"
+    subgroup = "reversal"
     pattern = "cdlengulfing"
     interval = "1d"
     period=3
 
     # Act
-    response = client.get(f"/candlestick/{pattern}/{interval}/{period}")
+    response = client.get(f"/candlestick/{group}/{subgroup}/{pattern}/{interval}/{period}")
 
     # Assert
     assert response.status_code == 200
     data = response.json()
     assert data["symbols"] == []
     assert "Returns 0 symbols" in data["message"]
-    mock_candlestick_patterns_service.get_symbols_for_pattern_and_interval.assert_called_once_with(pattern.upper(), interval, period)
+    mock_candlestick_patterns_service.get_symbols_for_pattern_and_interval.assert_called_once_with(group, pattern.upper(), interval, period)
 
 
 def test_get_symbols_for_pattern_and_interval_ServiceRaisesException_ReturnsInternalServerError(client, mock_candlestick_patterns_service):
     # Arrange
     mock_candlestick_patterns_service.get_symbols_for_pattern_and_interval.side_effect = Exception("Unexpected error")
 
+    group = "bullish"
+    subgroup = "reversal"
     pattern = "cdlengulfing"
     interval = "1d"
     period=3
 
     # Act
-    response = client.get(f"/candlestick/{pattern}/{interval}/{period}")
+    response = client.get(f"/candlestick/{group}/{subgroup}/{pattern}/{interval}/{period}")
 
     # Assert
     assert response.status_code == 500
-    mock_candlestick_patterns_service.get_symbols_for_pattern_and_interval.assert_called_once_with(pattern.upper(), interval, period)
+    mock_candlestick_patterns_service.get_symbols_for_pattern_and_interval.assert_called_once_with(group, pattern.upper(), interval, period)
