@@ -1,27 +1,9 @@
 import CONFIG from "../../config/config.js";
 
-// Fetch available strategies
-export async function fetchStrategies() {
-  try {
-    const response = await fetch(CONFIG.STRATEGIES_BASE_URL);
-    const data = await response.json();
-    if (!Array.isArray(data.strategies)) {
-      console.error("Unexpected strategies format:", data);
-      return [];
-    }
-    return data.strategies;
-  } catch (err) {
-    console.error("Error fetching strategies:", err);
-    return [];
-  }
-}
-
 // Fetch symbols for a strategy + interval
-export async function fetchSymbols(strategy, interval = "1d") {
+export async function fetchSymbols(url_path) {
   try {
-    const response = await fetch(
-      `${CONFIG.STRATEGIES_BASE_URL}/${strategy}/${interval}`
-    );
+    const response = await fetch(`${CONFIG.STRATEGIES_BASE_URL}/${url_path}`);
     const data = await response.json();
     if (!Array.isArray(data.symbols)) {
       console.error("Unexpected data format:", data);

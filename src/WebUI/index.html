@@ -9,14 +9,28 @@
     <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
   </head>
   <body>
-    <div style="padding: 20px; text-align: center">
-      <select id="strategy">
-        <option value="">Select strategy</option>
-      </select>
-      <select id="interval">
-        <option value="">Select interval</option>
-      </select>
-      <button id="GetSymbols">Get Symbols & Draw Charts</button>
+    <div class="control-bar">
+      <label>
+        Group<br />
+        <select id="group"></select>
+      </label>
+      <label>
+        Subgroup<br />
+        <select id="subgroup"></select>
+      </label>
+      <label>
+        Pattern<br />
+        <select id="pattern"></select>
+      </label>
+      <label>
+        Interval<br />
+        <select id="interval"></select>
+      </label>
+      <label>
+        Period<br />
+        <input id="period" type="number" min="1" max="30" value="1" />
+      </label>
+      <button id="scanBtn">Scan</button>
     </div>
     <div id="chartContainer" class="chart-container"></div>
     <script type="module" src="./assets/js/main.js"></script>
