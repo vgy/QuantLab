@@ -164,8 +164,9 @@ export function setupEventListeners() {
     const pattern = patternElement.value.toLowerCase().replace(/\s+/g, "");
     const interval = intervalElement.value.toLowerCase().trim();
     const period = periodElement.value.toLowerCase().trim();
+    const cdlpattern = pattern == "all" ? "all" : `cdl${pattern}`;
 
-    const url_path = `candlestick/${group}/${subgroup}/cdl${pattern}/${interval}/${period}`;
+    const url_path = `candlestick/${group}/${subgroup}/${cdlpattern}/${interval}/${period}`;
 
     chartContainer.innerHTML = "";
 

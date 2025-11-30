@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import talib
 from loguru import logger
-from strategies.constants.candlestick_patterns import reverse_lookup
+from strategies.constants.candlestick_patterns import get_patterns
 from strategies.utils.config_loader import load_config
 
 class CandlestickPatternsService:
@@ -12,19 +12,10 @@ class CandlestickPatternsService:
     def __init__(self):
         self.directory = load_config().get("data").get("directory")
     
-    def get_info(self, pattern: str):
-        if pattern not in reverse_lookup:
-            raise KeyError(f"Unknown pattern: {pattern}")
-        return reverse_lookup[pattern]
-    
-    def get_symbols_for_pattern_and_interval(self, group: str, pattern: str, interval: str, period: int) -> List[str]:
-        if pattern not in reverse_lookup:
-            raise KeyError(f"Unknown pattern: {pattern}")
-        if not hasattr(talib, pattern):
-            raise ValueError(f"{pattern} is not a valid TA-Lib function.")
-        
-        # Get the function dynamically
-        func = getattr(talib, pattern)
+    def get_symbols_for_pattern_and_interval(self, group: str, subgroup: str, pattern: str, interval: str, period: int) -> List[str]:
+        patterns = get_patterns(group, subgroup, pattern)
+        if not patterns:
+            raise KeyError(f"No pattern available for group:'{group}', subgroup:'{subgroup}', and pattern:'{pattern}'")
         required_cols = ["Open", "High", "Low", "Close"]
         self.folder_path = os.path.join(self.directory, interval)
         symbols = []
@@ -40,16 +31,20 @@ class CandlestickPatternsService:
                         continue                    
                     if not all(col in df.columns for col in required_cols):
                         continue
-                    result = func(df["Open"], df["High"], df["Low"], df["Close"])
-                    if len(result) >= period:
-                        if ((group == "bullish" and np.any(result[-period:] > 0)) or 
-                            (group == "bearish" and np.any(result[-period:] < 0)) or 
-                            (group == "neutral" and np.any(result[-period:] != 0))):
-                            # Extract symbol from filename: "<interval>-<symbol>.csv"
-                            symbol = file_name.split("-")[1].replace(".csv", "")
-                            symbols.append(symbol)
+                    
+                    for ptrn in patterns:        
+                        # Get the function dynamically
+                        func = getattr(talib, ptrn.upper())
+                        result = func(df["Open"], df["High"], df["Low"], df["Close"])
+                        if len(result) >= period:
+                            if ((group == "bullish" and np.any(result[-period:] > 0)) or 
+                                (group == "bearish" and np.any(result[-period:] < 0)) or 
+                                ((group == "neutral" or group == "all") and np.any(result[-period:] != 0))):
+                                # Extract symbol from filename: "<interval>-<symbol>.csv"
+                                symbol = file_name.split("-")[1].replace(".csv", "")
+                                symbols.append(symbol)
                 except Exception as e:
                     logger.warning(f"Skipping {file_name}: {e}")
-        logger.info(f"Found {len(symbols)} symbols for group:'{group}', pattern:'{pattern}', and interval:'{interval}")
+        logger.info(f"Found {len(symbols)} symbols for group:'{group}', subgroup:'{subgroup}', pattern:'{pattern}', interval:'{interval}', and period:'{period}'")
         return symbols
 

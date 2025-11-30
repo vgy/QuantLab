@@ -38,9 +38,8 @@ def create_app(strategy_service, downsampling_service, candlestick_patterns_serv
 
     @app.get("/candlestick/{group}/{subgroup}/{pattern}/{interval}/{period}", response_model = SymbolsResponse)
     def get_symbols_for_pattern_and_interval(group: str, subgroup: str, pattern: str, interval: str, period: int):
-        pattern = pattern.upper()
-        logger.info(f"REST: get_symbols_for_pattern_and_interval is called with group:{group}, pattern:{pattern}, interval:{interval} and period:{period}")
-        symbols = candlestick_patterns_service.get_symbols_for_pattern_and_interval(group, pattern, interval, period)
-        message = f"Returns {len(symbols)} symbols for group:{group}, pattern:{pattern}, interval:{interval} and period:{period}"
+        logger.info(f"REST: get_symbols_for_pattern_and_interval is called with group:{group}, subgroup:{subgroup}, pattern:{pattern}, interval:{interval} and period:{period}")
+        symbols = candlestick_patterns_service.get_symbols_for_pattern_and_interval(group, subgroup, pattern, interval, period)
+        message = f"Returns {len(symbols)} symbols for group:{group}, subgroup:{subgroup}, pattern:{pattern}, interval:{interval} and period:{period}"
         return SymbolsResponse(message = message, symbols = symbols)
     return app

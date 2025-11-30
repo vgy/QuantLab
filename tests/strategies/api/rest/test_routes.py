@@ -201,7 +201,7 @@ def test_get_symbols_for_pattern_and_interval_ValidRequest_ReturnsSymbolsRespons
     assert "symbols" in data
     assert len(data["symbols"]) == 3
     assert f"{len(mock_symbols)} symbols" in data["message"]
-    mock_candlestick_patterns_service.get_symbols_for_pattern_and_interval.assert_called_once_with(group, pattern.upper(), interval, period)
+    mock_candlestick_patterns_service.get_symbols_for_pattern_and_interval.assert_called_once_with(group, subgroup, pattern, interval, period)
 
 
 def test_get_symbols_for_pattern_and_interval_EmptySymbols_ReturnsEmptyList(client, mock_candlestick_patterns_service):
@@ -222,7 +222,7 @@ def test_get_symbols_for_pattern_and_interval_EmptySymbols_ReturnsEmptyList(clie
     data = response.json()
     assert data["symbols"] == []
     assert "Returns 0 symbols" in data["message"]
-    mock_candlestick_patterns_service.get_symbols_for_pattern_and_interval.assert_called_once_with(group, pattern.upper(), interval, period)
+    mock_candlestick_patterns_service.get_symbols_for_pattern_and_interval.assert_called_once_with(group, subgroup, pattern, interval, period)
 
 
 def test_get_symbols_for_pattern_and_interval_ServiceRaisesException_ReturnsInternalServerError(client, mock_candlestick_patterns_service):
@@ -240,4 +240,4 @@ def test_get_symbols_for_pattern_and_interval_ServiceRaisesException_ReturnsInte
 
     # Assert
     assert response.status_code == 500
-    mock_candlestick_patterns_service.get_symbols_for_pattern_and_interval.assert_called_once_with(group, pattern.upper(), interval, period)
+    mock_candlestick_patterns_service.get_symbols_for_pattern_and_interval.assert_called_once_with(group, subgroup, pattern, interval, period)

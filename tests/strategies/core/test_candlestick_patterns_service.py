@@ -26,63 +26,20 @@ def service(mock_config):
     """Return a fresh CandlestickPatternsService."""
     return CandlestickPatternsService()
 
-
-# ---------------------------------------------------------------------
-# Tests for get_info
-# ---------------------------------------------------------------------
-def test_get_info_ValidPattern_ReturnsInfo(service):
-    # Arrange
-    pattern = next(iter(reverse_lookup.keys()))
-
-    # Act
-    result = service.get_info(pattern)
-
-    # Assert
-    assert result == reverse_lookup[pattern]
-
-
-def test_get_info_InvalidPattern_RaisesKeyError(service):
-    # Arrange
-    pattern = "UNKNOWN"
-
-    # Act / Assert
-    with pytest.raises(KeyError):
-        service.get_info(pattern)
-
-
 # ---------------------------------------------------------------------
 # Tests for get_symbols_for_pattern_and_interval
 # ---------------------------------------------------------------------
 def test_get_symbols_for_pattern_and_interval_InvalidPattern_RaisesKeyError(service):
     # Arrange
     group = "bullish"
+    subgroup = "reversal"
     pattern = "NOT_IN_REVERSE_LOOKUP"
     interval = "1h"
     period = 3
 
     # Act / Assert
     with pytest.raises(KeyError):
-        service.get_symbols_for_pattern_and_interval(group, pattern, interval, period)
-
-
-def test_get_symbols_for_pattern_and_interval_NonTalibFunction_RaisesValueError(service):
-    # Arrange
-    group = "bullish"
-    pattern = next(iter(reverse_lookup.keys()))
-    interval = "1h"
-    period = 3
-
-    # Patch talib module inside the service
-    with patch("strategies.core.candlestick_patterns_service.talib", new=MagicMock()) as talib_mock:
-        # Ensure the attribute does NOT exist
-        if hasattr(talib_mock, pattern):
-            delattr(talib_mock, pattern)
-
-        # Act / Assert
-        with pytest.raises(ValueError) as excinfo:
-            service.get_symbols_for_pattern_and_interval(group, pattern, interval, period)
-
-        assert pattern in str(excinfo.value)
+        service.get_symbols_for_pattern_and_interval(group, subgroup, pattern, interval, period)
 
 
 @pytest.mark.parametrize(
@@ -99,6 +56,7 @@ def test_get_symbols_for_pattern_and_interval_TalibSignalProcessing_WorksCorrect
 ):
     # Arrange
     group = "bullish"
+    subgroup = "reversal"
     pattern = next(iter(reverse_lookup.keys()))
     interval = "1h"
     folder = mock_config / interval
@@ -117,10 +75,10 @@ def test_get_symbols_for_pattern_and_interval_TalibSignalProcessing_WorksCorrect
     # Mock talib
     talib_mock = mocker.patch("strategies.core.candlestick_patterns_service.talib")
     func_mock = MagicMock(return_value=np.array(values))
-    setattr(talib_mock, pattern, func_mock)
+    setattr(talib_mock, pattern.upper(), func_mock)
 
     # Act
-    result = service.get_symbols_for_pattern_and_interval(group, pattern, interval, period)
+    result = service.get_symbols_for_pattern_and_interval(group, subgroup, pattern, interval, period)
 
     # Assert
     if expected:
@@ -132,6 +90,7 @@ def test_get_symbols_for_pattern_and_interval_TalibSignalProcessing_WorksCorrect
 def test_get_symbols_for_pattern_and_interval_EmptyCsvFile_SkipsFile(service, mocker, mock_config):
     # Arrange
     group = "bullish"
+    subgroup = "reversal"
     pattern = next(iter(reverse_lookup.keys()))
     interval = "1h"
     folder = mock_config / interval
@@ -146,7 +105,7 @@ def test_get_symbols_for_pattern_and_interval_EmptyCsvFile_SkipsFile(service, mo
     setattr(talib_mock, pattern, func_mock)
 
     # Act
-    result = service.get_symbols_for_pattern_and_interval(group, pattern, interval, 2)
+    result = service.get_symbols_for_pattern_and_interval(group, subgroup, pattern, interval, 2)
 
     # Assert
     assert result == []
@@ -155,6 +114,7 @@ def test_get_symbols_for_pattern_and_interval_EmptyCsvFile_SkipsFile(service, mo
 def test_get_symbols_for_pattern_and_interval_MissingColumns_SkipsFile(service, mocker, mock_config):
     # Arrange
     group = "bullish"
+    subgroup = "reversal"
     pattern = next(iter(reverse_lookup.keys()))
     interval = "1h"
     folder = mock_config / interval
@@ -169,7 +129,7 @@ def test_get_symbols_for_pattern_and_interval_MissingColumns_SkipsFile(service, 
     setattr(talib_mock, pattern, func_mock)
 
     # Act
-    result = service.get_symbols_for_pattern_and_interval(group, pattern, interval, 2)
+    result = service.get_symbols_for_pattern_and_interval(group, subgroup, pattern, interval, 2)
 
     # Assert
     assert result == []
@@ -178,6 +138,7 @@ def test_get_symbols_for_pattern_and_interval_MissingColumns_SkipsFile(service, 
 def test_get_symbols_for_pattern_and_interval_CsvThrowsException_SkipsFile(service, mocker, mock_config):
     # Arrange
     group = "bullish"
+    subgroup = "reversal"
     pattern = next(iter(reverse_lookup.keys()))
     interval = "1h"
     folder = mock_config / interval
@@ -192,10 +153,10 @@ def test_get_symbols_for_pattern_and_interval_CsvThrowsException_SkipsFile(servi
     # Mock talib
     talib_mock = mocker.patch("strategies.core.candlestick_patterns_service.talib")
     func_mock = MagicMock(return_value=np.array([100, 0, 0]))
-    setattr(talib_mock, pattern, func_mock)
+    setattr(talib_mock, pattern.upper(), func_mock)
 
     # Act
-    result = service.get_symbols_for_pattern_and_interval(group, pattern, interval, 1)
+    result = service.get_symbols_for_pattern_and_interval(group, subgroup, pattern, interval, 1)
 
     # Assert
     assert result == []
@@ -206,6 +167,7 @@ def test_get_symbols_for_pattern_and_interval_MultipleFiles_CorrectSymbolExtract
 ):
     # Arrange
     group = "bullish"
+    subgroup = "reversal"
     pattern = next(iter(reverse_lookup.keys()))
     interval = "1h"
     folder = mock_config / interval
@@ -226,10 +188,10 @@ def test_get_symbols_for_pattern_and_interval_MultipleFiles_CorrectSymbolExtract
     # Mock talib so both files have signals
     talib_mock = mocker.patch("strategies.core.candlestick_patterns_service.talib")
     func_mock = MagicMock(return_value=np.array([0, 100]))
-    setattr(talib_mock, pattern, func_mock)
+    setattr(talib_mock, pattern.upper(), func_mock)
 
     # Act
-    result = service.get_symbols_for_pattern_and_interval(group, pattern, interval, 1)
+    result = service.get_symbols_for_pattern_and_interval(group, subgroup, pattern, interval, 1)
 
     # Assert
     assert set(result) == {"BTC", "ADA"}
