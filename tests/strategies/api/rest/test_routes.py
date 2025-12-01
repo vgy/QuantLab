@@ -241,3 +241,61 @@ def test_get_symbols_for_pattern_and_interval_ServiceRaisesException_ReturnsInte
     # Assert
     assert response.status_code == 500
     mock_candlestick_patterns_service.get_symbols_for_pattern_and_interval.assert_called_once_with(group, subgroup, pattern, interval, period)
+
+    
+
+def test_get_candlestick_patterns_for_symbol_interval_period_ValidRequest_ReturnsPatternsResponse(client, mock_candlestick_patterns_service):
+    # Arrange
+    mock_patterns = ["2025-10-31 09:15:00 - cdldoji", "2025-10-31 09:15:00 - cdlhighwave", "2025-10-31 09:15:00 - cdlhikkake",]
+    mock_candlestick_patterns_service.get_candlestick_patterns_for_symbol_interval_period.return_value = mock_patterns
+
+    symbol = "AAPL"
+    interval = "1d"
+    period=3
+
+    # Act
+    response = client.get(f"/patterns/candlestick/{symbol}/{interval}/{period}")
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert "message" in data
+    assert data["message"] == f"Returns {len(mock_patterns)} candlestick patterns for symbol:{symbol}, interval:{interval}, and period:{period}"
+    assert "patterns" in data
+    assert data["patterns"] == mock_patterns
+    mock_candlestick_patterns_service.get_candlestick_patterns_for_symbol_interval_period.assert_called_once_with(symbol, interval, period)
+
+
+def test_get_candlestick_patterns_for_symbol_interval_period_EmptyPatterns_ReturnsEmptyList(client, mock_candlestick_patterns_service):
+    # Arrange
+    mock_candlestick_patterns_service.get_candlestick_patterns_for_symbol_interval_period.return_value = []
+
+    symbol = "AAPL"
+    interval = "1d"
+    period=3
+
+    # Act
+    response = client.get(f"/patterns/candlestick/{symbol}/{interval}/{period}")
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert data["message"] == f"Returns 0 candlestick patterns for symbol:{symbol}, interval:{interval}, and period:{period}"
+    assert data["patterns"] == []
+    mock_candlestick_patterns_service.get_candlestick_patterns_for_symbol_interval_period.assert_called_once_with(symbol, interval, period)
+
+
+def test_get_candlestick_patterns_for_symbol_interval_period_ServiceRaisesException_ReturnsInternalServerError(client, mock_candlestick_patterns_service):
+    # Arrange
+    mock_candlestick_patterns_service.get_candlestick_patterns_for_symbol_interval_period.side_effect = Exception("Unexpected error")
+
+    symbol = "AAPL"
+    interval = "1d"
+    period=3
+
+    # Act
+    response = client.get(f"/patterns/candlestick/{symbol}/{interval}/{period}")
+
+    # Assert
+    assert response.status_code == 500
+    mock_candlestick_patterns_service.get_candlestick_patterns_for_symbol_interval_period.assert_called_once_with(symbol, interval, period)

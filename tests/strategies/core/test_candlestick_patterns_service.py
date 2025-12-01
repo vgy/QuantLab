@@ -26,6 +26,21 @@ def service(mock_config):
     """Return a fresh CandlestickPatternsService."""
     return CandlestickPatternsService()
 
+@pytest.fixture
+def mock_patterns(mocker):
+    """Mock get_patterns()."""
+    return mocker.patch("strategies.core.candlestick_patterns_service.get_patterns")
+
+
+@pytest.fixture
+def mock_logger(mocker):
+    return mocker.patch("strategies.core.candlestick_patterns_service.logger")
+
+@pytest.fixture
+def mock_talib(mocker):
+    """Mock the talib module."""
+    return mocker.patch("strategies.core.candlestick_patterns_service.talib")
+
 # ---------------------------------------------------------------------
 # Tests for get_symbols_for_pattern_and_interval
 # ---------------------------------------------------------------------
@@ -195,3 +210,192 @@ def test_get_symbols_for_pattern_and_interval_MultipleFiles_CorrectSymbolExtract
 
     # Assert
     assert set(result) == {"BTC", "ADA"}
+
+def test_get_candlestick_patterns_for_symbol_interval_period_NoPatterns_KeyError(service, mock_patterns):
+    # Arrange
+    mock_patterns.return_value = []
+
+    # Act / Assert
+    with pytest.raises(KeyError):
+        service.get_candlestick_patterns_for_symbol_interval_period("BTC", "1h", 5)
+
+def test_get_candlestick_patterns_for_symbol_interval_period_FileMissing_ReturnsEmpty(service, mock_patterns, mock_logger):
+    # Arrange
+    mock_patterns.return_value = ["2025-11-04 09:15:00 - cdlengulfing"]
+
+    # Act
+    output = service.get_candlestick_patterns_for_symbol_interval_period("BTC", "1h", 5)
+
+    # Assert
+    assert output == []
+    mock_logger.error.assert_called()
+
+
+def test_get_candlestick_patterns_for_symbol_interval_period_EmptyFile_ReturnsEmpty(service, mock_patterns, mock_logger, tmp_path):
+    # Arrange
+    mock_patterns.return_value = ["2025-11-04 09:15:00 - cdlengulfing"]
+
+    folder = tmp_path / "1h"
+    folder.mkdir()
+    file_path = folder / "1h-BTC.csv"
+    file_path.write_text("")  # empty file
+
+    # Act
+    output = service.get_candlestick_patterns_for_symbol_interval_period("BTC", "1h", 5)
+
+    # Assert
+    assert output == []
+    mock_logger.error.assert_called()
+
+
+@pytest.mark.parametrize(
+    "missing_col",
+    ["Timestamp", "Open", "High", "Low", "Close"]
+)
+def test_get_candlestick_patterns_for_symbol_interval_period_MissingColumns_ReturnsEmpty(
+    service, mock_patterns, mock_logger, tmp_path, missing_col
+):
+    # Arrange
+    required_cols = ["Timestamp", "Open", "High", "Low", "Close"]
+    mock_patterns.return_value = ["2025-11-04 09:15:00 - cdlengulfing"]
+
+    folder = tmp_path / "1h"
+    folder.mkdir()
+
+    df = pd.DataFrame({
+        col: [1, 2, 3] for col in required_cols if col != missing_col
+    })
+
+    file_path = folder / "1h-BTC.csv"
+    df.to_csv(file_path, index=False)
+
+    # Act
+    output = service.get_candlestick_patterns_for_symbol_interval_period("BTC", "1h", 5)
+
+    # Assert
+    assert output == []
+    mock_logger.error.assert_called()
+
+
+def test_get_candlestick_patterns_for_symbol_interval_period_TalibError_ReturnsEmpty(
+    service, mock_patterns, mock_talib, mock_logger, tmp_path
+):
+    # Arrange
+    required_cols = ["Timestamp", "Open", "High", "Low", "Close"]
+    mock_patterns.return_value = ["2025-11-04 09:15:00 - cdlengulfing"]
+    folder = tmp_path / "1h"
+    folder.mkdir()
+
+    df = pd.DataFrame({
+        col: [1, 2, 3, 4, 5] for col in required_cols
+    })
+    file_path = folder / "1h-BTC.csv"
+    df.to_csv(file_path, index=False)
+
+    mock_talib.CDLENGULFING.side_effect = Exception("TA-Lib error")
+
+    # Act
+    output = service.get_candlestick_patterns_for_symbol_interval_period("BTC", "1h", 5)
+
+    # Assert
+    assert output == []
+    mock_logger.error.assert_called()
+
+
+def test_get_candlestick_patterns_for_symbol_interval_period_PatternFound_ReturnsMatches(
+    service, mock_patterns, mock_talib, mock_config, mock_logger
+):
+    # Arrange
+    ptrn = "CDLENGULFING"
+    mock_patterns.return_value = [ptrn]
+
+    folder = mock_config / "1h"
+    folder.mkdir()
+
+    df = pd.DataFrame({
+        "Timestamp": ["t1", "t2", "t3", "t4", "t5"],
+        "Open": [1, 2, 3, 4, 5],
+        "High": [2, 3, 4, 5, 6],
+        "Low": [0, 1, 2, 3, 4],
+        "Close": [1.5, 2.5, 3.5, 4.5, 5.5],
+    })
+
+    file_path = folder / "1h-BTC.csv"
+    df.to_csv(file_path, index=False)
+
+    mock_talib.CDLENGULFING.return_value = pd.Series([0, 0, 100, 0, -100])
+
+    # Act
+    result = service.get_candlestick_patterns_for_symbol_interval_period("BTC", "1h", 5)
+
+    # Assert
+    assert len(result) == 2
+    assert "t3 - CDLENGULFING" in result
+    assert "t5 - CDLENGULFING" in result
+    assert result == sorted(result)
+    mock_logger.info.assert_called()
+
+
+def test_get_candlestick_patterns_for_symbol_interval_period_PatternOutsidePeriod_NoMatches(
+    service, mock_patterns, mock_talib, mock_config, mock_logger
+):
+    # Arrange
+    ptrn = "CDLENGULFING"
+    mock_patterns.return_value = [ptrn]
+
+    folder = mock_config / "1h"
+    folder.mkdir()
+
+    df = pd.DataFrame({
+        "Timestamp": ["t1", "t2", "t3", "t4", "t5"],
+        "Open": [1, 2, 3, 4, 5],
+        "High": [2, 3, 4, 5, 6],
+        "Low": [0, 1, 2, 3, 4],
+        "Close": [1, 2, 3, 4, 5],
+    })
+
+    file_path = folder / "1h-BTC.csv"
+    df.to_csv(file_path, index=False)
+
+    mock_talib.CDLENGULFING.return_value = pd.Series([100, 0, 0, 0, 0])
+
+    # Act
+    result = service.get_candlestick_patterns_for_symbol_interval_period("BTC", "1h", 4)
+
+    # Assert
+    assert result == []
+    mock_logger.info.assert_called()
+
+
+def test_get_candlestick_patterns_for_symbol_interval_period_MultiplePatterns_MultipleMatches(
+    service, mock_patterns, mock_talib, mock_config, mock_logger
+):
+    # Arrange
+    mock_patterns.return_value = ["CDLDOJI", "CDLENGULFING"]
+
+    folder = mock_config / "1h"
+    folder.mkdir()
+
+    df = pd.DataFrame({
+        "Timestamp": ["t1", "t2", "t3", "t4"],
+        "Open": [1, 2, 3, 4],
+        "High": [2, 3, 4, 5],
+        "Low": [0, 1, 2, 3],
+        "Close": [1.5, 2.5, 3.5, 4.5],
+    })
+
+    file_path = folder / "1h-BTC.csv"
+    df.to_csv(file_path, index=False)
+
+    mock_talib.CDLDOJI.return_value = pd.Series([0, 0, 10, 0])
+    mock_talib.CDLENGULFING.return_value = pd.Series([0, -20, 0, 0])
+
+    # Act
+    result = service.get_candlestick_patterns_for_symbol_interval_period("BTC", "1h", 3)
+
+    # Assert
+    assert "t3 - CDLDOJI" in result
+    assert "t2 - CDLENGULFING" in result
+    assert len(result) == 2
+    assert result == sorted(result)
+    mock_logger.info.assert_called()

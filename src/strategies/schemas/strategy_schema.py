@@ -22,3 +22,9 @@ class SymbolsResponse(BaseModel):
     """Response containing symbols for a given strategy and interval."""
     message: str = Field(..., description="Returns len(symbols) symbols for strategy (strategy) and (interval)")
     symbols: List[str] = Field(default_factory=list, description="List of matching symbols")
+
+
+class PatternsResponse(BaseModel):
+    """Response containing patterns for a given symbol, interval, and period."""
+    message: str = Field(..., description="Returns len(patterns) patterns for symbol, interval and period")
+    patterns: List[str] = Field(default_factory=list, description="List of matching patterns and their timestamp")

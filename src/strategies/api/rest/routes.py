@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from strategies.schemas.strategy_schema import StrategiesResponse, SymbolsResponse
+from strategies.schemas.strategy_schema import StrategiesResponse, SymbolsResponse, PatternsResponse
 from strategies.schemas.downsampling_schema import DownsamplingResponse
 from loguru import logger
 
@@ -42,4 +42,11 @@ def create_app(strategy_service, downsampling_service, candlestick_patterns_serv
         symbols = candlestick_patterns_service.get_symbols_for_pattern_and_interval(group, subgroup, pattern, interval, period)
         message = f"Returns {len(symbols)} symbols for group:{group}, subgroup:{subgroup}, pattern:{pattern}, interval:{interval} and period:{period}"
         return SymbolsResponse(message = message, symbols = symbols)
+
+    @app.get("/patterns/candlestick/{symbol}/{interval}/{period}", response_model = PatternsResponse)
+    def get_candlestick_patterns_for_symbol_interval_period(symbol: str, interval: str, period: int):
+        logger.info(f"REST: get_candlestick_patterns_for_symbol_interval_period is called with symbol:{symbol}, interval:{interval}, and period:{period}")
+        patterns = candlestick_patterns_service.get_candlestick_patterns_for_symbol_interval_period(symbol, interval, period)
+        message = f"Returns {len(patterns)} candlestick patterns for symbol:{symbol}, interval:{interval}, and period:{period}"
+        return PatternsResponse(message = message, patterns = patterns)
     return app
