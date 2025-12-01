@@ -1,5 +1,16 @@
 import CONFIG from "../../config/config.js";
 
+export async function fetchStrategiesData(url_path) {
+  try {
+    const response = await fetch(`${CONFIG.STRATEGIES_BASE_URL}/${url_path}`);
+    const data = await response.json();
+    return data;
+  } catch (err) {
+    console.error("Error fetching data from strategies:", err);
+    return [];
+  }
+}
+
 // Fetch symbols for a strategy + interval
 export async function fetchSymbols(url_path) {
   try {
