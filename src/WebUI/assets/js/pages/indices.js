@@ -38,10 +38,11 @@ function parseCSV(text) {
 }
 
 async function loadCharts() {
-  const selectedIndex = document.getElementById("indexSelect").value;
-  const filteredSymbols = csvData[selectedIndex];
   const indicesContainer = document.getElementById("indicesContainer");
   indicesContainer.innerHTML = "";
+  const selectedIndex = document.getElementById("indexSelect").value;
+  if (selectedIndex == "None") return;
+  const filteredSymbols = csvData[selectedIndex];
   for (const symbol of filteredSymbols) {
     const symbolWrapper = document.createElement("div");
     indicesContainer.appendChild(symbolWrapper);
