@@ -31,18 +31,19 @@ public sealed class IbkrContractIdDownloadService(
 
     public async Task<string> DownloadContractIdsAsync(string file)
     {
-        var symbols = await fileService.ReadAsync(file, a => a[0]);
+        var stocks = await fileService.ReadAsync(file, a => new Stock(a[0], a[1]));
+        var symbolsDict = stocks.ToDictionary(s => s.Symbol, s => s.IbkrSymbol);
 
         using var scope = _serviceProvider.CreateScope();
         var ibkrDownloadService = scope.ServiceProvider.GetRequiredService<IbkrDownloadService>();
         var tasks = new List<Task<ResponseData>>();
-        foreach (var symbol in symbols)
+        foreach (var stock in stocks)
         {
-            var path = string.Format(_futuresContractIdEndPoint, symbol, Exchange);
+            var path = string.Format(_futuresContractIdEndPoint, stock.IbkrSymbol, Exchange);
             var task = downloadQueue.QueueAsync(async token =>
             {
-                _logger.LogInformation("📥 Queued job for {symbol}", symbol);
-                return await ibkrDownloadService.DownloadAsync(symbol, path, token);
+                _logger.LogInformation("📥 Queued job for {symbol}", stock.Symbol);
+                return await ibkrDownloadService.DownloadAsync(stock.Symbol, path, token);
             });
 
             tasks.Add(task);
@@ -53,15 +54,18 @@ public sealed class IbkrContractIdDownloadService(
         var responseDatas = await Task.WhenAll(tasks);
 
         var results = responseDatas
-            .Select(ParseResponseData)
-            .OfType<Symbol>() // filters nulls
+            .Select(r => ParseResponseData(symbolsDict, r))
+            .OfType<FuturesContract>() // filters nulls
             .ToList();
 
         await fileService.WriteAsync(_symbolsAndContractIdsFileName, results);
-        return $"Retrieved Contract Ids for {results.Count} of {symbols.Count()} symbols";
+        return $"Retrieved Contract Ids for {results.Count} of {stocks.Count()} symbols";
     }
 
-    private Symbol? ParseResponseData(ResponseData responseData)
+    private FuturesContract? ParseResponseData(
+        Dictionary<string, string> symbolsDict,
+        ResponseData responseData
+    )
     {
         _logger.LogInformation(
             "✅ Received result for {symbol}, data count: {count}",
@@ -76,9 +80,10 @@ public sealed class IbkrContractIdDownloadService(
 
         try
         {
-            var jsonElement = (JsonElement)responseData.Data[responseData.Symbol];
+            var ibkrSymbol = symbolsDict[responseData.Symbol];
+            var jsonElement = (JsonElement)responseData.Data[ibkrSymbol];
             var conid = jsonElement[0].GetProperty("conid").GetInt32();
-            return new Symbol(responseData.Symbol, conid);
+            return new FuturesContract(responseData.Symbol, conid);
         }
         catch (Exception ex)
         {

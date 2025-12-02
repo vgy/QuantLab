@@ -42,14 +42,14 @@ public sealed class IbkrBarDownloadService(
     )
     {
         var startTime = _timeProvider.Now;
-        var symbols = await _fileService.ReadAsync(
+        var futuresContracts = await _fileService.ReadAsync(
             inputFileName,
-            a => new Symbol(a[0], int.Parse(a[1]))
+            a => new FuturesContract(a[0], int.Parse(a[1]))
         );
 
-        var symbolUrlPairs = symbols
-            .Select(sc =>
-                (Symbol: sc.Name, Path: BuildUrl(sc.CurrentFuturesContractId, barInterval))
+        var symbolUrlPairs = futuresContracts
+            .Select(fc =>
+                (Symbol: fc.Symbol, Path: BuildUrl(fc.CurrentFuturesContractId, barInterval))
             )
             .ToList();
 
@@ -111,13 +111,15 @@ public sealed class IbkrBarDownloadService(
         }
 
         var matchedKeys = results.Select(t => t[0].Symbol).ToHashSet();
-        var unavailableSymbols = symbols.Where(x => !matchedKeys.Contains(x.Name)).ToList();
+        var unavailableSymbols = futuresContracts
+            .Where(x => !matchedKeys.Contains(x.Symbol))
+            .ToList();
         await _fileService.WriteAsync(_retrySymbolsAndContractIdsFileName, unavailableSymbols);
         var endTime = _timeProvider.Now;
         _logger.LogInformation(
             $" DownloadHistoricalBarAsync for {barInterval.ToShortString()} - Started: {startTime:yyyy-MM-dd HH:mm:ss}, Ended: {endTime:yyyy-MM-dd HH:mm:ss}"
         );
-        return $"{startTime:yyyy-MM-dd HH:mm:ss}: Retrieved Historical Bars of {barInterval.ToShortString()} for {results.Count} of {symbols.Count()} symbols";
+        return $"{startTime:yyyy-MM-dd HH:mm:ss}: Retrieved Historical Bars of {barInterval.ToShortString()} for {results.Count} of {futuresContracts.Count()} symbols";
     }
 
     private string BuildUrl(int conId, BarInterval barInterval, string? startTime = null)

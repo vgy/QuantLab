@@ -81,24 +81,30 @@ public class IbkrContractIdDownloadServiceTests
     public async Task DownloadContractIdsAsync_FileWithSymbols_QueuesJobsAndWritesFile()
     {
         // Arrange
-        var symbols = new[] { "NIFTY", "BANKNIFTY" };
+        var stocks = new[]
+        {
+            new Stock("NIFTY", "NIFTYIBKR"),
+            new Stock("BANKNIFTY", "BANKNIFTYIBKR"),
+        };
         _csvFileServiceMock
             .Setup(f =>
                 f.ReadAsync(
                     It.Is<string>(x => x == SymbolsFileName),
-                    It.IsAny<Func<string[], string>>(),
+                    It.IsAny<Func<string[], Stock>>(),
                     It.IsAny<CancellationToken>()
                 )
             )
-            .ReturnsAsync(symbols);
+            .ReturnsAsync(stocks.AsEnumerable());
 
-        var responses = symbols
-            .Select(symbol => new ResponseData
+        var responses = stocks
+            .Select(stock => new ResponseData
             {
-                Symbol = symbol,
+                Symbol = stock.Symbol,
                 Data = new Dictionary<string, object>
                 {
-                    [symbol] = JsonSerializer.Deserialize<JsonElement>("""[{"conid":12345}]"""),
+                    [stock.IbkrSymbol] = JsonSerializer.Deserialize<JsonElement>(
+                        """[{"conid":12345}]"""
+                    ),
                 },
             })
             .ToList();
@@ -114,7 +120,7 @@ public class IbkrContractIdDownloadServiceTests
             .Setup(f =>
                 f.WriteAsync(
                     It.Is<string>(s => s == SymbolsAndContractIdsFileName),
-                    It.IsAny<IEnumerable<Symbol>>(),
+                    It.IsAny<IEnumerable<FuturesContract>>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -130,7 +136,7 @@ public class IbkrContractIdDownloadServiceTests
             f =>
                 f.WriteAsync(
                     It.Is<string>(x => x == SymbolsAndContractIdsFileName),
-                    It.Is<List<Symbol>>(l => l.Count == 2),
+                    It.Is<List<FuturesContract>>(l => l.Count == 2),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -148,23 +154,23 @@ public class IbkrContractIdDownloadServiceTests
     public async Task DownloadContractIdsAsync_EmptyDataInResponse_ParsesNullAndWritesPartialResults()
     {
         // Arrange
-        var symbols = new[] { "AAPL", "TSLA" };
+        var stocks = new[] { new Stock("AAPL", "AAPLIBKR"), new Stock("TSLA", "TSLAIBKR") };
         _csvFileServiceMock
             .Setup(f =>
                 f.ReadAsync(
                     It.Is<string>(x => x == SymbolsFileName),
-                    It.IsAny<Func<string[], string>>(),
+                    It.IsAny<Func<string[], Stock>>(),
                     It.IsAny<CancellationToken>()
                 )
             )
-            .ReturnsAsync(symbols);
+            .ReturnsAsync(stocks);
 
         var validResponse = new ResponseData
         {
             Symbol = "AAPL",
             Data = new Dictionary<string, object>
             {
-                ["AAPL"] = JsonSerializer.Deserialize<JsonElement>("""[{"conid":123}]"""),
+                ["AAPLIBKR"] = JsonSerializer.Deserialize<JsonElement>("""[{"conid":123}]"""),
             },
         };
         var invalidResponse = new ResponseData
@@ -184,7 +190,7 @@ public class IbkrContractIdDownloadServiceTests
             .Setup(f =>
                 f.WriteAsync(
                     It.Is<string>(x => x == SymbolsAndContractIdsFileName),
-                    It.IsAny<IEnumerable<Symbol>>(),
+                    It.IsAny<IEnumerable<FuturesContract>>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -200,7 +206,7 @@ public class IbkrContractIdDownloadServiceTests
             f =>
                 f.WriteAsync(
                     It.Is<string>(x => x == SymbolsAndContractIdsFileName),
-                    It.Is<List<Symbol>>(l => l.Count == 1 && l[0].Name == "AAPL"),
+                    It.Is<List<FuturesContract>>(l => l.Count == 1 && l[0].Symbol == "AAPL"),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -215,15 +221,16 @@ public class IbkrContractIdDownloadServiceTests
         var response = new ResponseData
         {
             Symbol = "IBM",
-            Data = new Dictionary<string, object> { ["IBM"] = jsonElement },
+            Data = new Dictionary<string, object> { ["IBMIBKR"] = jsonElement },
         };
+        var symbolsDict = new Dictionary<string, string> { { "IBM", "IBMIBKR" } };
 
         // Act
-        var result = InvokePrivateParseResponseData(response);
+        var result = InvokePrivateParseResponseData(symbolsDict, response);
 
         // Assert
         result.Should().NotBeNull();
-        result!.Value.Name.Should().Be("IBM");
+        result!.Value.Symbol.Should().Be("IBM");
         result.Value.CurrentFuturesContractId.Should().Be(999);
     }
 
@@ -236,9 +243,10 @@ public class IbkrContractIdDownloadServiceTests
             Symbol = "GOOG",
             Data = new Dictionary<string, object>(),
         };
+        var symbolsDict = new Dictionary<string, string> { { "GOOG", "GOOGIBKR" } };
 
         // Act
-        var result = InvokePrivateParseResponseData(response);
+        var result = InvokePrivateParseResponseData(symbolsDict, response);
 
         // Assert
         result.Should().BeNull();
@@ -253,24 +261,28 @@ public class IbkrContractIdDownloadServiceTests
         var response = new ResponseData
         {
             Symbol = "MSFT",
-            Data = new Dictionary<string, object> { ["MSFT"] = badJsonElement },
+            Data = new Dictionary<string, object> { ["MSFTIBKR"] = badJsonElement },
         };
+        var symbolsDict = new Dictionary<string, string> { { "MSFT", "MSFTIBKR" } };
 
         // Act
-        var result = InvokePrivateParseResponseData(response);
+        var result = InvokePrivateParseResponseData(symbolsDict, response);
 
         // Assert
         result.Should().BeNull();
         _loggerMock.VerifyLog(LogLevel.Error, Times.AtLeastOnce());
     }
 
-    private Symbol? InvokePrivateParseResponseData(ResponseData responseData)
+    private FuturesContract? InvokePrivateParseResponseData(
+        Dictionary<string, string> symbolsDict,
+        ResponseData responseData
+    )
     {
         var method = typeof(IbkrContractIdDownloadService).GetMethod(
             "ParseResponseData",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
         )!;
-        return (Symbol?)
-            method.Invoke(_ibkrContractIdDownloadService, new object[] { responseData });
+        return (FuturesContract?)
+            method.Invoke(_ibkrContractIdDownloadService, [symbolsDict, responseData]);
     }
 }

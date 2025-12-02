@@ -90,17 +90,17 @@ public class IbkrBarDownloadServiceTests
     public async Task DownloadHistoricalBarAsync_ValidInput_AllSymbolsDownloadedAndWritten()
     {
         // Arrange
-        var symbols = new List<Symbol> { new("INFY", 101), new("TCS", 102) };
+        var futuresContracts = new List<FuturesContract> { new("INFY", 101), new("TCS", 102) };
 
         _csvFileServiceMock
             .Setup(f =>
                 f.ReadAsync(
                     It.Is<string>(x => x == SymbolsAndContractIdsFileName),
-                    It.IsAny<Func<string[], Symbol>>(),
+                    It.IsAny<Func<string[], FuturesContract>>(),
                     It.IsAny<CancellationToken>()
                 )
             )
-            .ReturnsAsync(symbols);
+            .ReturnsAsync(futuresContracts);
 
         var responseData1 = new ResponseData(
             "INFY",
@@ -148,7 +148,7 @@ public class IbkrBarDownloadServiceTests
             f =>
                 f.WriteAsync(
                     It.Is<string>(x => x == RetrySymbolsAndContractIdsFileName),
-                    It.IsAny<List<Symbol>>(),
+                    It.IsAny<List<Stock>>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -161,17 +161,17 @@ public class IbkrBarDownloadServiceTests
     public async Task DownloadHistoricalBarAsync_EmptyResponseData_WritesRetryFile()
     {
         // Arrange
-        var symbols = new List<Symbol> { new("RELIANCE", 999) };
+        var futuresContracts = new List<FuturesContract> { new("RELIANCE", 999) };
 
         _csvFileServiceMock
             .Setup(f =>
                 f.ReadAsync(
                     It.Is<string>(x => x == SymbolsAndContractIdsFileName),
-                    It.IsAny<Func<string[], Symbol>>(),
+                    It.IsAny<Func<string[], FuturesContract>>(),
                     It.IsAny<CancellationToken>()
                 )
             )
-            .ReturnsAsync(symbols);
+            .ReturnsAsync(futuresContracts);
 
         _timeProviderMock.Setup(tp => tp.Now).Returns(new DateTime(2025, 11, 07, 09, 42, 04));
 
@@ -199,7 +199,7 @@ public class IbkrBarDownloadServiceTests
             f =>
                 f.WriteAsync(
                     It.Is<string>(x => x == RetrySymbolsAndContractIdsFileName),
-                    It.Is<List<Symbol>>(l => l.Count == 1 && l[0].Name == "RELIANCE"),
+                    It.Is<List<FuturesContract>>(l => l.Count == 1 && l[0].Symbol == "RELIANCE"),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -210,16 +210,16 @@ public class IbkrBarDownloadServiceTests
     public async Task DownloadHistoricalBarAsync_ExceptionDuringParse_LogsErrorAndSkipsFileWrite()
     {
         // Arrange
-        var symbols = new List<Symbol> { new("INFY", 123) };
+        var futuresContracts = new List<FuturesContract> { new("INFY", 123) };
         _csvFileServiceMock
             .Setup(f =>
                 f.ReadAsync(
                     It.Is<string>(x => x == SymbolsAndContractIdsFileName),
-                    It.IsAny<Func<string[], Symbol>>(),
+                    It.IsAny<Func<string[], FuturesContract>>(),
                     It.IsAny<CancellationToken>()
                 )
             )
-            .ReturnsAsync(symbols);
+            .ReturnsAsync(futuresContracts);
 
         _timeProviderMock.Setup(tp => tp.Now).Returns(new DateTime(2025, 11, 07, 07, 42, 04));
 
@@ -320,17 +320,22 @@ public class IbkrBarDownloadServiceTests
     public async Task DownloadHistoricalBarAsync_SomeTasksFail_ContinuesAndWritesPartialResults()
     {
         // Arrange
-        var symbols = new List<Symbol> { new("INFY", 101), new("TCS", 102), new("HDFCBANK", 103) };
+        var futuresContracts = new List<FuturesContract>
+        {
+            new("INFY", 101),
+            new("TCS", 102),
+            new("HDFCBANK", 103),
+        };
 
         _csvFileServiceMock
             .Setup(f =>
                 f.ReadAsync(
                     It.Is<string>(x => x == SymbolsAndContractIdsFileName),
-                    It.IsAny<Func<string[], Symbol>>(),
+                    It.IsAny<Func<string[], FuturesContract>>(),
                     It.IsAny<CancellationToken>()
                 )
             )
-            .ReturnsAsync(symbols);
+            .ReturnsAsync(futuresContracts);
         _timeProviderMock.Setup(tp => tp.Now).Returns(new DateTime(2025, 11, 07, 09, 42, 04));
 
         var goodResponse = new ResponseData("INFY", new() { { "data", CreateValidJsonElement() } });
@@ -370,10 +375,10 @@ public class IbkrBarDownloadServiceTests
             f =>
                 f.WriteAsync(
                     It.Is<string>(x => x == RetrySymbolsAndContractIdsFileName),
-                    It.Is<List<Symbol>>(l =>
+                    It.Is<List<FuturesContract>>(l =>
                         l.Count == 2
-                        && l.Any(s => s.Name == "TCS")
-                        && l.Any(s => s.Name == "HDFCBANK")
+                        && l.Any(s => s.Symbol == "TCS")
+                        && l.Any(s => s.Symbol == "HDFCBANK")
                     ),
                     It.IsAny<CancellationToken>()
                 ),
@@ -390,17 +395,17 @@ public class IbkrBarDownloadServiceTests
     public async Task DownloadHistoricalBarAsync_CancellationRequested_StopsProcessingGracefully()
     {
         // Arrange
-        var symbols = new List<Symbol> { new("INFY", 123), new("TCS", 124) };
+        var futuresContracts = new List<FuturesContract> { new("INFY", 123), new("TCS", 124) };
 
         _csvFileServiceMock
             .Setup(f =>
                 f.ReadAsync(
                     It.Is<string>(x => x == SymbolsAndContractIdsFileName),
-                    It.IsAny<Func<string[], Symbol>>(),
+                    It.IsAny<Func<string[], FuturesContract>>(),
                     It.IsAny<CancellationToken>()
                 )
             )
-            .ReturnsAsync(symbols);
+            .ReturnsAsync(futuresContracts);
 
         var cts = new CancellationTokenSource();
         cts.Cancel(); // Simulate external cancellation
@@ -436,16 +441,16 @@ public class IbkrBarDownloadServiceTests
     public async Task DownloadHistoricalBarAsync_TaskThrowsException_LogsAndWritesRetrySymbols()
     {
         // Arrange
-        var symbols = new List<Symbol> { new("SBIN", 777) };
+        var futuresContracts = new List<FuturesContract> { new("SBIN", 777) };
         _csvFileServiceMock
             .Setup(f =>
                 f.ReadAsync(
                     It.Is<string>(x => x == SymbolsAndContractIdsFileName),
-                    It.IsAny<Func<string[], Symbol>>(),
+                    It.IsAny<Func<string[], FuturesContract>>(),
                     It.IsAny<CancellationToken>()
                 )
             )
-            .ReturnsAsync(symbols);
+            .ReturnsAsync(futuresContracts);
         _timeProviderMock.Setup(tp => tp.Now).Returns(new DateTime(2025, 11, 07, 09, 42, 04));
 
         _downloadQueueMock
@@ -467,7 +472,7 @@ public class IbkrBarDownloadServiceTests
             f =>
                 f.WriteAsync(
                     It.Is<string>(x => x == RetrySymbolsAndContractIdsFileName),
-                    It.Is<List<Symbol>>(list => list.Single().Name == "SBIN"),
+                    It.Is<List<FuturesContract>>(list => list.Single().Symbol == "SBIN"),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -480,17 +485,20 @@ public class IbkrBarDownloadServiceTests
     public async Task DownloadHistoricalBarAsync_MultipleSymbols_AllQueuedInParallel()
     {
         // Arrange
-        var symbols = Enumerable.Range(1, 5).Select(i => new Symbol($"SYM{i}", 100 + i)).ToList();
+        var futuresContracts = Enumerable
+            .Range(1, 5)
+            .Select(i => new FuturesContract($"SYM{i}", 100 + i))
+            .ToList();
 
         _csvFileServiceMock
             .Setup(f =>
                 f.ReadAsync(
                     It.Is<string>(x => x == SymbolsAndContractIdsFileName),
-                    It.IsAny<Func<string[], Symbol>>(),
+                    It.IsAny<Func<string[], FuturesContract>>(),
                     It.IsAny<CancellationToken>()
                 )
             )
-            .ReturnsAsync(symbols);
+            .ReturnsAsync(futuresContracts);
 
         var response = new ResponseData("SYM", new() { { "data", CreateValidJsonElement() } });
 
