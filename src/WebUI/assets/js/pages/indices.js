@@ -2,7 +2,11 @@ import { createChartForSymbol } from "../chart.js";
 const path = "../../../data/nse_index_securities.csv";
 
 document.addEventListener("DOMContentLoaded", () => {
+  loadIndicesCharts();
   loadCSV();
+  document
+    .getElementById("refresh-btn")
+    .addEventListener("click", loadIndicesCharts);
   document.getElementById("scanBtn").addEventListener("click", loadCharts);
 });
 
@@ -38,12 +42,30 @@ function parseCSV(text) {
 }
 
 async function loadCharts() {
-  const indicesContainer = document.getElementById("indicesContainer");
-  indicesContainer.innerHTML = "";
+  const securitiesContainer = document.getElementById("securitiesContainer");
+  securitiesContainer.innerHTML = "";
   const selectedIndex = document.getElementById("indexSelect").value;
   if (selectedIndex == "None") return;
   const filteredSymbols = csvData[selectedIndex];
   for (const symbol of filteredSymbols) {
+    const symbolWrapper = document.createElement("div");
+    securitiesContainer.appendChild(symbolWrapper);
+    symbolWrapper.className = "symbol-wrapper";
+    symbolWrapper.innerHTML = "";
+    await createChartForSymbol(symbolWrapper, symbol, "1d");
+    await createChartForSymbol(symbolWrapper, symbol, "1h");
+    await createChartForSymbol(symbolWrapper, symbol, "5min");
+  }
+}
+
+async function loadIndicesCharts() {
+  const indicesContainer = document.getElementById("indicesContainer");
+  indicesContainer.innerHTML = "";
+  document.getElementById("indexSelect").value = "None";
+  const securitiesContainer = document.getElementById("securitiesContainer");
+  securitiesContainer.innerHTML = "";
+  const indices = ["NIFTY50", "BANKNIFTY", "NSEFIN", "MIDCAPSEL"];
+  for (const symbol of indices) {
     const symbolWrapper = document.createElement("div");
     indicesContainer.appendChild(symbolWrapper);
     symbolWrapper.className = "symbol-wrapper";

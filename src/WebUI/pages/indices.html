@@ -10,12 +10,14 @@
     <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
   </head>
   <body>
+    <button id="refresh-btn">🔄 Refresh Indices</button>
+    <div id="indicesContainer" class="indices-container"></div>
     <div class="control-bar">
       <label for="indexSelect">Select Index:</label>
       <select id="indexSelect"></select>
       <button id="scanBtn">Scan</button>
     </div>
-    <div id="indicesContainer" class="indices-container"></div>
+    <div id="securitiesContainer" class="securities-container"></div>
     <script type="module" src="../assets/js/pages/indices.js"></script>
   </body>
 </html>
