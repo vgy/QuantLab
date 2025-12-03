@@ -115,9 +115,17 @@ button:hover {
   a {
     color: white;
     text-decoration: none;
+    font: 14px Arial;
   }
 
   a:hover {
     text-decoration: underline;
   }
+}
+
+.symbol-wrapper {
+  display: flex;
+  max-width: 1200px;
+  gap: 20px;
+  margin: 20px;
 }

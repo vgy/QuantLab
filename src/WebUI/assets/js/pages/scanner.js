@@ -1,6 +1,6 @@
-import CONFIG from "../../config/config.js";
-import { fetchSymbols } from "./api.js";
-import { createChartForSymbol } from "./chart.js";
+import CONFIG from "../../../config/config.js";
+import { fetchSymbols } from "../api.js";
+import { createChartForSymbol } from "../chart.js";
 
 const CANDLESTICK_PATTERNS = {
   All: {
@@ -145,7 +145,7 @@ groupElement.addEventListener("change", () => {
 subgroupElement.addEventListener("change", loadPatterns);
 
 // Populate dropdowns
-export async function initializeUI() {
+async function initializeUI() {
   loadGroups();
   loadSubGroups();
   loadPatterns();
@@ -157,7 +157,7 @@ export async function initializeUI() {
   });
 }
 
-export function setupEventListeners() {
+function setupEventListeners() {
   getScanBtn.addEventListener("click", async () => {
     const group = groupElement.value.toLowerCase().trim();
     const subgroup = subgroupElement.value.toLowerCase().trim();
@@ -176,3 +176,8 @@ export function setupEventListeners() {
     }
   });
 }
+
+document.addEventListener("DOMContentLoaded", async () => {
+  await initializeUI();
+  setupEventListeners();
+});

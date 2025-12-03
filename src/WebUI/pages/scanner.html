@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <title>Scanner</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <script type="module" src="../assets/js/load-partials.js"></script>
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+  </head>
+  <body>
+    <div data-include="../partials/header.html"></div>
+    <div class="control-bar">
+      <label>
+        Group<br />
+        <select id="group"></select>
+      </label>
+      <label>
+        Subgroup<br />
+        <select id="subgroup"></select>
+      </label>
+      <label>
+        Pattern<br />
+        <select id="pattern"></select>
+      </label>
+      <label>
+        Interval<br />
+        <select id="interval"></select>
+      </label>
+      <label>
+        Period<br />
+        <input id="period" type="number" min="1" max="30" value="1" />
+      </label>
+      <button id="scanBtn">Scan</button>
+    </div>
+    <div id="chartContainer" class="chart-container"></div>
+    <script type="module" src="../assets/js/pages/scanner.js"></script>
+  </body>
+</html>
