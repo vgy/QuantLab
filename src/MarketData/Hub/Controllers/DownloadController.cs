@@ -11,6 +11,7 @@ using QuantLab.MarketData.Hub.Services.Interface.Download.Ibkr;
 public class DownloadController(
     IIbkrContractIdDownloadService ibkrContractIdDownloadService,
     IIbkrBarDownloadService ibkrBarDownloadService,
+    IIbkrTwsBarDownloadService ibkrTwsBarDownloadService,
     IOptions<FileStorageSettings> fileStorageSettings
 ) : ControllerBase
 {
@@ -50,6 +51,42 @@ public class DownloadController(
             return BadRequest("Interval is invalid");
 
         var message = await ibkrBarDownloadService.DownloadHistoricalBarAsync(
+            barInterval,
+            inputFileName
+        );
+        return Ok(new { message });
+    }
+
+    [HttpPost("tws/bars/{interval}")]
+    public async Task<IActionResult> DownloadTwsHistoricalBars(string interval)
+    {
+        return await DownloadTwsHistoricalBars(
+            interval,
+            fileStorageSettings.Value.SymbolsAndContractIdsFileName
+        );
+    }
+
+    [HttpPost("tws/bars/{interval}/retry")]
+    public async Task<IActionResult> DownloadTwsHistoricalBarsForMissedSymbols(string interval)
+    {
+        return await DownloadTwsHistoricalBars(
+            interval,
+            fileStorageSettings.Value.RetrySymbolsAndContractIdsFileName
+        );
+    }
+
+    private async Task<IActionResult> DownloadTwsHistoricalBars(
+        string interval,
+        string inputFileName
+    )
+    {
+        if (string.IsNullOrWhiteSpace(interval))
+            return BadRequest("Interval is required");
+
+        if (!BarIntervalConverter.TryParse(interval, out var barInterval))
+            return BadRequest("Interval is invalid");
+
+        var message = await ibkrTwsBarDownloadService.DownloadTwsHistoricalBarAsync(
             barInterval,
             inputFileName
         );

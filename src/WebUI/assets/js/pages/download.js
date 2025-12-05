@@ -2,8 +2,12 @@ const downloadTypes = [
   "ContractIds",
   "5min",
   "5min Retry",
+  "5min-TWS",
+  "5min-TWS Retry",
   "15min",
   "15min Retry",
+  "15min-TWS",
+  "15min-TWS Retry",
   "1D",
   "1D Retry",
   "1W",
@@ -54,11 +58,17 @@ downloadTypes.forEach((type) => {
     const baseType = type
       .toLowerCase()
       .replace(/\s*retry\s*/i, "")
+      .replace(/\s*-tws\s*/i, "")
       .trim();
     const isContractids = type.toLowerCase().includes("contractids");
+    const isTws = type.toLowerCase().includes("tws");
     const isRetry = type.toLowerCase().includes("retry");
     const url = isContractids
       ? `http://localhost:6001/api/download/contractids`
+      : isTws
+      ? isRetry
+        ? `http://localhost:6001/api/download/tws/bars/${baseType}/retry`
+        : `http://localhost:6001/api/download/tws/bars/${baseType}`
       : isRetry
       ? `http://localhost:6001/api/download/bars/${baseType}/retry`
       : `http://localhost:6001/api/download/bars/${baseType}`;

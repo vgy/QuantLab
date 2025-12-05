@@ -21,8 +21,8 @@ public class DownloadControllerBenchmarks
             .Setup(s => s.DownloadContractIdsAsync(It.IsAny<string>()))
             .ReturnsAsync("Downloaded Successfully");
 
-        // Mock IIbkrBarDownloadService
         var barServiceMock = new Mock<IIbkrBarDownloadService>();
+        var twsBarServiceMock = new Mock<IIbkrTwsBarDownloadService>();
 
         // File storage settings
         var settings = Options.Create(new FileStorageSettings { SymbolsFileName = "symbols.json" });
@@ -30,6 +30,7 @@ public class DownloadControllerBenchmarks
         _controller = new DownloadController(
             contractServiceMock.Object,
             barServiceMock.Object,
+            twsBarServiceMock.Object,
             settings
         );
     }

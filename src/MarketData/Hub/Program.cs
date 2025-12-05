@@ -46,6 +46,8 @@ builder.Services.AddSingleton<IMarketDataService, MarketDataService>();
 builder.Services.AddSingleton<IIbkrContractIdDownloadService, IbkrContractIdDownloadService>();
 builder.Services.AddSingleton<IIbkrBarDownloadService, IbkrBarDownloadService>();
 builder.Services.AddSingleton<IMarketDataFetchService, MarketDataFetchService>();
+builder.Services.AddSingleton<IbkrTwsService>();
+builder.Services.AddSingleton<IIbkrTwsBarDownloadService, IbkrTwsBarDownloadService>();
 builder.Services.AddSingleton<ITimeProvider>(_ =>
 {
     var timeZoneId = builder.Configuration["TimeProvider:TimeZoneId"];
