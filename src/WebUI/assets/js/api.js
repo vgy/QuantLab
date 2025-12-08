@@ -27,6 +27,27 @@ export async function fetchSymbols(url_path) {
   }
 }
 
+export async function fetchSymbolsForJson(url_path, jsonBody) {
+  try {
+    const response = await fetch(`${CONFIG.STRATEGIES_BASE_URL}/${url_path}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(jsonBody),
+    });
+    const data = await response.json();
+    if (!Array.isArray(data.symbols)) {
+      console.error("Unexpected data format:", data);
+      return [];
+    }
+    return data.symbols;
+  } catch (err) {
+    console.error("Error fetching symbols:", err);
+    return [];
+  }
+}
+
 // Fetch bars for a symbol
 export async function fetchSymbolData(symbol, interval = "1d") {
   try {

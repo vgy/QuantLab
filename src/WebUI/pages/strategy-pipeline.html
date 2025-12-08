@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="stylesheet" href="../assets/css/pages/strategy-pipeline.css" />
+    <title>Strategy Pipeline</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <script type="module" src="../assets/js/load-partials.js"></script>
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+  </head>
+  <body>
+    <div data-include="../partials/header.html"></div>
+    <select id="templateSelect"></select>
+    <textarea id="jsonInput"></textarea>
+    <br />
+    <button id="runBtn">Run</button>
+    <div id="chartContainer" class="chart-container"></div>
+    <script
+      type="module"
+      src="../assets/js/pages/strategy-pipeline.js"
+    ></script>
+  </body>
+</html>

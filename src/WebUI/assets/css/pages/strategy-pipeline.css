@@ -1,0 +1,15 @@
+textarea {
+  width: 100%;
+  max-width: 1500px;
+  min-width: 500px;
+  height: 201px;
+  font-family: monospace;
+  font-size: 14px;
+  padding: 10px;
+  margin: 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  resize: vertical;
+  overflow: auto;
+}
