@@ -6,6 +6,7 @@ from strategies.utils.logger import setup_logger
 from strategies.core.candlestick_patterns_service import CandlestickPatternsService
 from strategies.core.downsampling_service import DownsamplingService
 from strategies.core.strategy_service import StrategyService
+from strategies.core.strategy_pipeline import StrategyPipeline
 from strategies.api.rest.routes import create_app
 from strategies.api.grpc.grpc_server import serve_grpc
 
@@ -24,6 +25,7 @@ async def main():
     candlestick_patterns_service = CandlestickPatternsService()
     downsampling_service = DownsamplingService()
     strategy_service = StrategyService()
+    strategy_pipeline = StrategyPipeline()
 
     # Start gRPC server (in separate thread)
     grpc_server = serve_grpc(
@@ -33,7 +35,7 @@ async def main():
     )
 
     # Start REST server (in asyncio loop)
-    app = create_app(strategy_service, downsampling_service, candlestick_patterns_service)
+    app = create_app(strategy_service, downsampling_service, candlestick_patterns_service, strategy_pipeline)
     rest_task = asyncio.create_task(
         serve_rest(app, config["server"]["rest_host"], config["server"]["rest_port"])
     )

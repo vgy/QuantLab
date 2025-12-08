@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Dict, Any
 
 class Empty(BaseModel):
     """Equivalent to the gRPC Empty message."""
@@ -28,3 +28,13 @@ class PatternsResponse(BaseModel):
     """Response containing patterns for a given symbol, interval, and period."""
     message: str = Field(..., description="Returns len(patterns) patterns for symbol, interval and period")
     patterns: List[str] = Field(default_factory=list, description="List of matching patterns and their timestamp")
+
+class StrategyValidationRequest(BaseModel):
+    """Request to validate against given strategy, interval, and related params."""
+    strategy: str
+    interval: str
+    params: Dict[str, Any] = {}
+
+class StrategyPipelineRequest(BaseModel):
+    """Request to get symbols that validate a given list of StrategyValidationRequest."""
+    strategies: List[StrategyValidationRequest]

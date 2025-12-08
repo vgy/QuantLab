@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from strategies.schemas.strategy_schema import StrategiesResponse, SymbolsResponse, PatternsResponse
+from strategies.schemas.strategy_schema import StrategiesResponse, SymbolsResponse, PatternsResponse, StrategyPipelineRequest
 from strategies.schemas.downsampling_schema import DownsamplingResponse
 from loguru import logger
 
-def create_app(strategy_service, downsampling_service, candlestick_patterns_service):
+def create_app(strategy_service, downsampling_service, candlestick_patterns_service, strategy_pipeline):
     app = FastAPI(title="Strategies Service", version="1.0")
 
     # Enable CORS
@@ -49,4 +49,11 @@ def create_app(strategy_service, downsampling_service, candlestick_patterns_serv
         patterns = candlestick_patterns_service.get_candlestick_patterns_for_symbol_interval_period(symbol, interval, period)
         message = f"Returns {len(patterns)} candlestick patterns for symbol:{symbol}, interval:{interval}, and period:{period}"
         return PatternsResponse(message = message, patterns = patterns)
+    
+    @app.post("/pipeline/run", response_model = SymbolsResponse)
+    def run_pipeline(request: StrategyPipelineRequest):
+        logger.info(f"REST: run_pipeline is called with strategies:{request.strategies}")
+        symbols = strategy_pipeline.run_pipeline(request.strategies)
+        message = f"Returns {len(symbols)} symbols for strategies:{request.strategies}"
+        return SymbolsResponse(message = message, symbols = symbols)
     return app

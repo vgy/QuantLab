@@ -12,3 +12,4 @@ dependencies:
   - grpcio-tools
   - pyyaml
   - loguru
+  - scipy

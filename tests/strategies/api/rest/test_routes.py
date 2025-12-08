@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import Mock
 from strategies.api.rest.routes import create_app
+from strategies.schemas.strategy_schema import StrategyValidationRequest
 
 
 @pytest.fixture
@@ -19,11 +20,15 @@ def mock_candlestick_patterns_service():
     """Fixture that returns a mock strategy service."""
     return Mock()
 
+@pytest.fixture
+def mock_strategy_pipeline():
+    """Fixture that returns a mock strategy pipeline."""
+    return Mock()
 
 @pytest.fixture
-def client(mock_strategy_service, mock_downsampling_service, mock_candlestick_patterns_service):
+def client(mock_strategy_service, mock_downsampling_service, mock_candlestick_patterns_service, mock_strategy_pipeline):
     """Fixture that returns a FastAPI TestClient with a mocked strategy service."""
-    app = create_app(mock_strategy_service, mock_downsampling_service, mock_candlestick_patterns_service)
+    app = create_app(mock_strategy_service, mock_downsampling_service, mock_candlestick_patterns_service, mock_strategy_pipeline)
     return TestClient(app, raise_server_exceptions=False)
 
 def test_get_strategies_ValidRequest_ReturnsStrategiesResponse(client, mock_strategy_service):
@@ -121,9 +126,9 @@ def test_get_symbols_for_strategy_and_interval_ServiceRaisesException_ReturnsInt
     mock_strategy_service.get_symbols_for_strategy_and_interval.assert_called_once_with(strategy, interval)
 
 
-def test_app_Metadata_IsSetCorrectly(mock_strategy_service, mock_downsampling_service, mock_candlestick_patterns_service):
+def test_app_Metadata_IsSetCorrectly(mock_strategy_service, mock_downsampling_service, mock_candlestick_patterns_service, mock_strategy_pipeline):
     # Arrange
-    app = create_app(mock_strategy_service, mock_downsampling_service, mock_candlestick_patterns_service)
+    app = create_app(mock_strategy_service, mock_downsampling_service, mock_candlestick_patterns_service, mock_strategy_pipeline)
 
     # Act
     title = app.title
@@ -299,3 +304,71 @@ def test_get_candlestick_patterns_for_symbol_interval_period_ServiceRaisesExcept
     # Assert
     assert response.status_code == 500
     mock_candlestick_patterns_service.get_candlestick_patterns_for_symbol_interval_period.assert_called_once_with(symbol, interval, period)
+
+
+def test_run_pipeline_ValidRequest_ReturnsSymbolsResponse(client, mock_strategy_pipeline):
+    # Arrange
+    mock_symbols = ["AAPL", "MSFT", "GOOG"]
+    mock_strategy_pipeline.run_pipeline.return_value = mock_symbols
+    request_body = {
+        "strategies": [
+            {"strategy": "ABC", "interval": "1h", "params": {"X": "all", "duration": 1}},
+            {"strategy": "DEF", "interval": "1h"}
+        ]
+    }
+    expected_request_body = [StrategyValidationRequest(strategy='ABC', interval='1h', params={'X': 'all', 'duration': 1}), 
+                             StrategyValidationRequest(strategy='DEF', interval='1h', params={})]
+
+    # Act
+    response = client.post("/pipeline/run", json=request_body)
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert "symbols" in data
+    assert len(data["symbols"]) == 3
+    assert f"{len(mock_symbols)} symbols" in data["message"]
+    mock_strategy_pipeline.run_pipeline.assert_called_once_with(expected_request_body)
+
+
+def test_run_pipeline_EmptySymbols_ReturnsEmptyList(client, mock_strategy_pipeline):
+    # Arrange
+    mock_strategy_pipeline.run_pipeline.return_value = []
+    request_body = {
+        "strategies": [
+            {"strategy": "ABC", "interval": "1h", "params": {"X": "all", "duration": 1}},
+            {"strategy": "DEF", "interval": "1h"}
+        ]
+    }
+    expected_request_body = [StrategyValidationRequest(strategy='ABC', interval='1h', params={'X': 'all', 'duration': 1}), 
+                             StrategyValidationRequest(strategy='DEF', interval='1h', params={})]
+
+    # Act
+    response = client.post("/pipeline/run", json=request_body)
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert data["symbols"] == []
+    assert "Returns 0 symbols" in data["message"]
+    mock_strategy_pipeline.run_pipeline.assert_called_once_with(expected_request_body)
+
+
+def test_run_pipeline_ServiceRaisesException_ReturnsInternalServerError(client, mock_strategy_pipeline):
+    # Arrange
+    mock_strategy_pipeline.run_pipeline.side_effect = Exception("Unexpected error")
+    request_body = {
+        "strategies": [
+            {"strategy": "ABC", "interval": "1h", "params": {"X": "all", "duration": 1}},
+            {"strategy": "DEF", "interval": "1h"}
+        ]
+    }
+    expected_request_body = [StrategyValidationRequest(strategy='ABC', interval='1h', params={'X': 'all', 'duration': 1}), 
+                             StrategyValidationRequest(strategy='DEF', interval='1h', params={})]
+
+    # Act
+    response = client.post("/pipeline/run", json=request_body)
+
+    # Assert
+    assert response.status_code == 500
+    mock_strategy_pipeline.run_pipeline.assert_called_once_with(expected_request_body)
