@@ -1,120 +1,120 @@
 Index,Symbol
 None,NONE
-NIFTY 50,HDFCBANK
 NIFTY 50,RELIANCE
-NIFTY 50,ICICIBANK
-NIFTY 50,BHARTIARTL
-NIFTY 50,SBIN
-NIFTY 50,AXISBANK
-NIFTY 50,INFY
-NIFTY 50,M&M
 NIFTY 50,TCS
-NIFTY 50,KOTAKBANK
-NIFTY 50,ETERNAL
-NIFTY 50,BAJFINANCE
-NIFTY 50,INDIGO
-NIFTY 50,MARUTI
-NIFTY 50,ASIANPAINT
-NIFTY 50,LT
+NIFTY 50,HDFCBANK
+NIFTY 50,BHARTIARTL
+NIFTY 50,ICICIBANK
+NIFTY 50,INFY
+NIFTY 50,SBIN
 NIFTY 50,HINDUNILVR
-NIFTY 50,SUNPHARMA
-NIFTY 50,SHRIRAMFIN
-NIFTY 50,BEL
-NIFTY 50,HCLTECH
-NIFTY 50,HINDALCO
-NIFTY 50,JSWSTEEL
 NIFTY 50,ITC
-NIFTY 50,EICHERMOT
-NIFTY 50,TMPV
-NIFTY 50,DRREDDY
-NIFTY 50,ADANIPORTS
-NIFTY 50,POWERGRID
-NIFTY 50,BAJAJ-AUTO
-NIFTY 50,TECHM
-NIFTY 50,CIPLA
-NIFTY 50,JIOFIN
-NIFTY 50,TATASTEEL
-NIFTY 50,TITAN
-NIFTY 50,MAXHEALTH
-NIFTY 50,APOLLOHOSP
+NIFTY 50,LT
+NIFTY 50,HCLTECH
+NIFTY 50,BAJFINANCE
+NIFTY 50,SUNPHARMA
+NIFTY 50,NTPC
+NIFTY 50,MARUTI
+NIFTY 50,AXISBANK
+NIFTY 50,ONGC
+NIFTY 50,M&M
+NIFTY 50,KOTAKBANK
 NIFTY 50,ADANIENT
 NIFTY 50,ULTRACEMCO
-NIFTY 50,WIPRO
-NIFTY 50,TRENT
-NIFTY 50,NTPC
-NIFTY 50,SBILIFE
-NIFTY 50,HDFCLIFE
-NIFTY 50,BAJAJFINSV
+NIFTY 50,POWERGRID
+NIFTY 50,TITAN
+NIFTY 50,ADANIPORTS
 NIFTY 50,COALINDIA
-NIFTY 50,ONGC
+NIFTY 50,WIPRO
+NIFTY 50,BAJAJ-AUTO
+NIFTY 50,ASIANPAINT
+NIFTY 50,BAJAJFINSV
+NIFTY 50,TRENT
 NIFTY 50,NESTLEIND
+NIFTY 50,JSWSTEEL
+NIFTY 50,BEL
+NIFTY 50,JIOFIN
+NIFTY 50,TATASTEEL
 NIFTY 50,GRASIM
+NIFTY 50,INDIGO
+NIFTY 50,SBILIFE
+NIFTY 50,TECHM
+NIFTY 50,HINDALCO
+NIFTY 50,HDFCLIFE
+NIFTY 50,EICHERMOT
+NIFTY 50,CIPLA
+NIFTY 50,SHRIRAMFIN
+NIFTY 50,DRREDDY
 NIFTY 50,TATACONSUM
+NIFTY 50,APOLLOHOSP
+NIFTY 50,MAXHEALTH
+NIFTY 50,ETERNAL
+NIFTY 50,TMPV
 Bank,HDFCBANK
 Bank,ICICIBANK
 Bank,SBIN
 Bank,AXISBANK
 Bank,KOTAKBANK
-Bank,CANBK
 Bank,BANKBARODA
 Bank,PNB
-Bank,IDFCFIRSTB
 Bank,INDUSINDBK
+Bank,CANBK
+Bank,IDFCFIRSTB
 Bank,FEDERALBNK
 Bank,AUBANK
 Financial Services,HDFCBANK
 Financial Services,ICICIBANK
 Financial Services,SBIN
+Financial Services,BAJFINANCE
 Financial Services,AXISBANK
 Financial Services,KOTAKBANK
-Financial Services,BSE
-Financial Services,BAJFINANCE
-Financial Services,SHRIRAMFIN
-Financial Services,RECLTD
+Financial Services,BAJAJFINSV
 Financial Services,JIOFIN
 Financial Services,SBILIFE
 Financial Services,PFC
 Financial Services,HDFCLIFE
-Financial Services,BAJAJFINSV
-Financial Services,ICICIPRULI
-Financial Services,MUTHOOTFIN
-Financial Services,LICHSGFIN
-Financial Services,SBICARD
+Financial Services,RECLTD
+Financial Services,SHRIRAMFIN
 Financial Services,CHOLAFIN
+Financial Services,ICICIPRULI
 Financial Services,ICICIGI
-IT,INFY
+Financial Services,MUTHOOTFIN
+Financial Services,SBICARD
+Financial Services,BSE
+Financial Services,LICHSGFIN
 IT,TCS
+IT,INFY
 IT,HCLTECH
-IT,TECHM
 IT,WIPRO
 IT,LTIM
-IT,PERSISTENT
-IT,COFORGE
-IT,MPHASIS
+IT,TECHM
 IT,OFSS
-Auto,M&M
+IT,PERSISTENT
+IT,MPHASIS
+IT,COFORGE
 Auto,MARUTI
-Auto,ASHOKLEY
-Auto,HEROMOTOCO
+Auto,M&M
+Auto,BAJAJ-AUTO
+Auto,EICHERMOT
 Auto,MOTHERSON
 Auto,TVSMOTOR
-Auto,EICHERMOT
-Auto,TMPV
-Auto,BAJAJ-AUTO
-Auto,BHARATFORG
-Auto,UNOMINDA
+Auto,HEROMOTOCO
 Auto,BOSCHLTD
 Auto,TIINDIA
+Auto,BHARATFORG
+Auto,ASHOKLEY
+Auto,UNOMINDA
 Auto,EXIDEIND
 Auto,SONACOMS
+Auto,TMPV
 Bank - PSU,SBIN
-Bank - PSU,UNIONBANK
-Bank - PSU,CANBK
-Bank - PSU,MAHABANK
 Bank - PSU,BANKBARODA
 Bank - PSU,PNB
+Bank - PSU,CANBK
+Bank - PSU,UNIONBANK
 Bank - PSU,INDIANB
 Bank - PSU,BANKINDIA
+Bank - PSU,MAHABANK
 Bank - PSU,CENTRALBK
 Bank - PSU,IOB
 Bank - PSU,UCOBANK
@@ -123,74 +123,74 @@ Bank - Private,HDFCBANK
 Bank - Private,ICICIBANK
 Bank - Private,AXISBANK
 Bank - Private,KOTAKBANK
-Bank - Private,IDFCFIRSTB
-Bank - Private,YESBANK
-Bank - Private,BANDHANBNK
 Bank - Private,INDUSINDBK
+Bank - Private,YESBANK
+Bank - Private,IDFCFIRSTB
 Bank - Private,FEDERALBNK
+Bank - Private,BANDHANBNK
 Bank - Private,RBLBANK
 FMCG,HINDUNILVR
 FMCG,ITC
-FMCG,MARICO
-FMCG,BRITANNIA
-FMCG,VBL
-FMCG,DABUR
 FMCG,NESTLEIND
-FMCG,UNITDSPR
-FMCG,TATACONSUM
+FMCG,VBL
 FMCG,GODREJCP
-FMCG,RADICO
+FMCG,BRITANNIA
+FMCG,TATACONSUM
+FMCG,UNITDSPR
+FMCG,DABUR
 FMCG,COLPAL
+FMCG,MARICO
 FMCG,PATANJALI
+FMCG,RADICO
 FMCG,UBL
 FMCG,EMAMILTD
-Mid Small Financail Service,BSE
-Mid Small Financail Service,UNIONBANK
-Mid Small Financail Service,PAYTM
-Mid Small Financail Service,MCX
-Mid Small Financail Service,ANGELONE
-Mid Small Financail Service,IDFCFIRSTB
-Mid Small Financail Service,YESBANK
-Mid Small Financail Service,IEX
-Mid Small Financail Service,INDIANB
-Mid Small Financail Service,BANDHANBNK
-Mid Small Financail Service,INDUSINDBK
-Mid Small Financail Service,FEDERALBNK
-Mid Small Financail Service,HDFCAMC
-Mid Small Financail Service,AUBANK
-Mid Small Financail Service,CDSL
-Mid Small Financail Service,BANKINDIA
-Mid Small Financail Service,POLICYBZR
 Mid Small Financail Service,ICICIPRULI
+Mid Small Financail Service,INDUSINDBK
+Mid Small Financail Service,UNIONBANK
+Mid Small Financail Service,HDFCAMC
+Mid Small Financail Service,POLICYBZR
 Mid Small Financail Service,MUTHOOTFIN
-Mid Small Financail Service,LICHSGFIN
-Mid Small Financail Service,CAMS
-Mid Small Financail Service,RBLBANK
+Mid Small Financail Service,INDIANB
+Mid Small Financail Service,YESBANK
 Mid Small Financail Service,SBICARD
-Mid Small Financail Service,LTF
 Mid Small Financail Service,ABCAPITAL
-Mid Small Financail Service,MFSL
-Mid Small Financail Service,MANAPPURAM
-Mid Small Financail Service,360ONE
-Mid Small Financail Service,PNBHOUSING
+Mid Small Financail Service,IDFCFIRSTB
+Mid Small Financail Service,BANKINDIA
 Mid Small Financail Service,HUDCO
-Mid Small IT And Telecom,IDEA
-Mid Small IT And Telecom,BSOFT
+Mid Small Financail Service,BSE
+Mid Small Financail Service,FEDERALBNK
+Mid Small Financail Service,AUBANK
+Mid Small Financail Service,PAYTM
+Mid Small Financail Service,LTF
+Mid Small Financail Service,360ONE
+Mid Small Financail Service,MFSL
+Mid Small Financail Service,LICHSGFIN
+Mid Small Financail Service,CDSL
+Mid Small Financail Service,BANDHANBNK
+Mid Small Financail Service,ANGELONE
+Mid Small Financail Service,PNBHOUSING
+Mid Small Financail Service,CAMS
+Mid Small Financail Service,IEX
+Mid Small Financail Service,MANAPPURAM
+Mid Small Financail Service,RBLBANK
+Mid Small Financail Service,MCX
 Mid Small IT And Telecom,INDUSTOWER
-Mid Small IT And Telecom,PERSISTENT
-Mid Small IT And Telecom,COFORGE
-Mid Small IT And Telecom,TATAELXSI
-Mid Small IT And Telecom,MPHASIS
 Mid Small IT And Telecom,OFSS
-Mid Small IT And Telecom,CYIENT
+Mid Small IT And Telecom,PERSISTENT
+Mid Small IT And Telecom,IDEA
+Mid Small IT And Telecom,MPHASIS
+Mid Small IT And Telecom,COFORGE
 Mid Small IT And Telecom,KPITTECH
+Mid Small IT And Telecom,TATAELXSI
+Mid Small IT And Telecom,TATATECH
+Mid Small IT And Telecom,CYIENT
+Mid Small IT And Telecom,HFCL
+Mid Small IT And Telecom,BSOFT
 Mid Small IT And Telecom,LTTS
 Mid Small IT And Telecom,TATACOMM
-Mid Small IT And Telecom,HFCL
 Mid Small IT And Telecom,ZENSARTECH
 Mid Small IT And Telecom,HEXT
 Mid Small IT And Telecom,AFFLE
 Mid Small IT And Telecom,INTELLECT
 Mid Small IT And Telecom,SONATSOFTW
 Mid Small IT And Telecom,BHARTIHEXA
-Mid Small IT And Telecom,TATATECH
