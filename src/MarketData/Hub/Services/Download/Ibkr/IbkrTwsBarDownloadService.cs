@@ -43,9 +43,9 @@ public sealed class IbkrTwsBarDownloadService(
         var ibkrTwsService = scope.ServiceProvider.GetRequiredService<IbkrTwsService>();
         List<List<QuantLabBar>> results = [];
 
-        try
+        foreach (var pair in futuresContracts)
         {
-            foreach (var pair in futuresContracts)
+            try
             {
                 _logger.LogInformation(
                     "📥 Queued job for {symbol} for {contractId}",
@@ -68,13 +68,14 @@ public sealed class IbkrTwsBarDownloadService(
                 );
                 results.Add(result);
             }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(
-                ex,
-                $"{ex.Message}. One or more downloads failed. Continuing with available data."
-            );
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    "Download failed for {symbol} with exception {ex}",
+                    pair.Symbol,
+                    ex
+                );
+            }
         }
 
         foreach (var result in results)
