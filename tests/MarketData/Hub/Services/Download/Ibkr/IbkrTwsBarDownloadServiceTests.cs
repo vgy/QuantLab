@@ -77,7 +77,7 @@ public sealed class IbkrTwsBarDownloadServiceTests
     [TestCase(BarInterval.FiveMinutes, "5 mins")]
     [TestCase(BarInterval.FifteenMinutes, "15 mins")]
     [TestCase(BarInterval.OneHour, "5 mins")]
-    [TestCase(BarInterval.OneDay, "5 mins")]
+    [TestCase(BarInterval.OneDay, "1 day")]
     [TestCase(BarInterval.OneWeek, "5 mins")]
     public void GetBarSizeSetting_ReturnsExpectedValue(
         BarInterval barInterval,

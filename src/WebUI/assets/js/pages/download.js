@@ -15,6 +15,8 @@ const downloadTwsTypes = [
   "5min-TWS Retry",
   "15min-TWS",
   "15min-TWS Retry",
+  "1D-TWS",
+  "1D-TWS Retry",
 ];
 
 const downsamplingTypes = ["30min", "1h"];

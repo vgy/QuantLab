@@ -104,22 +104,23 @@ public class IbkrTwsService : EWrapper
         {
             "5 mins" => BarInterval.FiveMinutes,
             "15 mins" => BarInterval.FifteenMinutes,
+            "1 day" => BarInterval.OneDay,
             _ => BarInterval.FiveMinutes,
         };
     }
 
     private static string ToIST(string time)
     {
-        DateTime parsed = DateTime.ParseExact(
-            time,
-            "yyyyMMdd  HH:mm:ss",
-            CultureInfo.InvariantCulture
-        );
+        var dateFormat = time.Contains(' ') ? "yyyyMMdd  HH:mm:ss" : "yyyyMMdd";
+        DateTime parsed = DateTime.ParseExact(time, dateFormat, CultureInfo.InvariantCulture);
         TimeZoneInfo cetZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Paris");
         DateTime utcTime = TimeZoneInfo.ConvertTimeToUtc(parsed, cetZone);
         TimeZoneInfo istZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time");
         DateTime istTime = TimeZoneInfo.ConvertTime(utcTime, istZone);
-        return istTime.ToString("yyyy-MM-dd HH:mm:ss");
+        var result = time.Contains(' ')
+            ? istTime.ToString("yyyy-MM-dd HH:mm:ss")
+            : $"{istTime:yyyy-MM-dd} 09:15:00";
+        return result;
     }
 
     public void historicalDataEnd(int reqId, string start, string end)

@@ -112,6 +112,7 @@ public sealed class IbkrTwsBarDownloadService(
         {
             BarInterval.FiveMinutes => "5 mins",
             BarInterval.FifteenMinutes => "15 mins",
+            BarInterval.OneDay => "1 day",
             _ => "5 mins",
         };
     }
