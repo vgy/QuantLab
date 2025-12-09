@@ -1,17 +1,20 @@
-const downloadTypes = [
-  "ContractIds",
+const downloadRestTypes = [
   "5min",
   "5min Retry",
-  "5min-TWS",
-  "5min-TWS Retry",
   "15min",
   "15min Retry",
-  "15min-TWS",
-  "15min-TWS Retry",
   "1D",
   "1D Retry",
   "1W",
   "1W Retry",
+  "ContractIds",
+];
+
+const downloadTwsTypes = [
+  "5min-TWS",
+  "5min-TWS Retry",
+  "15min-TWS",
+  "15min-TWS Retry",
 ];
 
 const downsamplingTypes = ["30min", "1h"];
@@ -30,64 +33,71 @@ function getCookie(name) {
     ?.split("=")[1];
 }
 
-const downloadTableBody = document.getElementById("downloadTableBody");
-downloadTypes.forEach((type) => {
-  const tr = document.createElement("tr");
-  const key = type.replace(/\s+/g, "_").toLowerCase();
+function downloadFromIbkr(downloadContainer, downloadTypes) {
+  downloadTypes.forEach((type) => {
+    const tr = document.createElement("tr");
+    const key = type.replace(/\s+/g, "_").toLowerCase();
 
-  tr.innerHTML = `
-<td>${type}</td>
-<td><button id="download-btn-${key}">Download</button></td>
-<td class="response" id="download-resp-${key}">Loading previous data...</td>
-`;
+    tr.innerHTML = `
+  <td>${type}</td>
+  <td><button id="download-btn-${key}">Download</button></td>
+  <td class="response" id="download-resp-${key}">Loading previous data...</td>
+  `;
 
-  downloadTableBody.appendChild(tr);
+    downloadContainer.appendChild(tr);
 
-  const saved = getCookie(`download_resp_${key}`);
-  document.getElementById(`download-resp-${key}`).textContent = saved
-    ? decodeURIComponent(saved)
-    : "No previous response.";
-});
-
-downloadTypes.forEach((type) => {
-  const key = type.replace(/\s+/g, "_").toLowerCase();
-  const btn = document.getElementById(`download-btn-${key}`);
-  const respCell = document.getElementById(`download-resp-${key}`);
-
-  btn.addEventListener("click", async () => {
-    const baseType = type
-      .toLowerCase()
-      .replace(/\s*retry\s*/i, "")
-      .replace(/\s*-tws\s*/i, "")
-      .trim();
-    const isContractids = type.toLowerCase().includes("contractids");
-    const isTws = type.toLowerCase().includes("tws");
-    const isRetry = type.toLowerCase().includes("retry");
-    const url = isContractids
-      ? `http://localhost:6001/api/download/contractids`
-      : isTws
-      ? isRetry
-        ? `http://localhost:6001/api/download/tws/bars/${baseType}/retry`
-        : `http://localhost:6001/api/download/tws/bars/${baseType}`
-      : isRetry
-      ? `http://localhost:6001/api/download/bars/${baseType}/retry`
-      : `http://localhost:6001/api/download/bars/${baseType}`;
-
-    respCell.textContent = "Downloading...";
-
-    try {
-      const response = await fetch(url, { method: "POST" });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const text = await response.text();
-      const message = JSON.parse(text).message || "(empty response)";
-
-      respCell.textContent = message;
-      setCookie(`download_resp_${key}`, message);
-    } catch (err) {
-      respCell.textContent = `Error: ${err.message}`;
-    }
+    const saved = getCookie(`download_resp_${key}`);
+    document.getElementById(`download-resp-${key}`).textContent = saved
+      ? decodeURIComponent(saved)
+      : "No previous response.";
   });
-});
+
+  downloadTypes.forEach((type) => {
+    const key = type.replace(/\s+/g, "_").toLowerCase();
+    const btn = document.getElementById(`download-btn-${key}`);
+    const respCell = document.getElementById(`download-resp-${key}`);
+
+    btn.addEventListener("click", async () => {
+      const baseType = type
+        .toLowerCase()
+        .replace(/\s*retry\s*/i, "")
+        .replace(/\s*-tws\s*/i, "")
+        .trim();
+      const isContractids = type.toLowerCase().includes("contractids");
+      const isTws = type.toLowerCase().includes("tws");
+      const isRetry = type.toLowerCase().includes("retry");
+      const url = isContractids
+        ? `http://localhost:6001/api/download/contractids`
+        : isTws
+        ? isRetry
+          ? `http://localhost:6001/api/download/tws/bars/${baseType}/retry`
+          : `http://localhost:6001/api/download/tws/bars/${baseType}`
+        : isRetry
+        ? `http://localhost:6001/api/download/bars/${baseType}/retry`
+        : `http://localhost:6001/api/download/bars/${baseType}`;
+
+      respCell.textContent = "Downloading...";
+
+      try {
+        const response = await fetch(url, { method: "POST" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const text = await response.text();
+        const message = JSON.parse(text).message || "(empty response)";
+
+        respCell.textContent = message;
+        setCookie(`download_resp_${key}`, message);
+      } catch (err) {
+        respCell.textContent = `Error: ${err.message}`;
+      }
+    });
+  });
+}
+
+const downloadRestTableBody = document.getElementById("downloadRestTableBody");
+downloadFromIbkr(downloadRestTableBody, downloadRestTypes);
+
+const downloadTwsTableBody = document.getElementById("downloadTwsTableBody");
+downloadFromIbkr(downloadTwsTableBody, downloadTwsTypes);
 
 const downsamplingTableBody = document.getElementById("downsamplingTableBody");
 downsamplingTypes.forEach((type) => {
