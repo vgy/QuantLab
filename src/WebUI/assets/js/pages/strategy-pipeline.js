@@ -1,10 +1,36 @@
 import { fetchSymbolsForJson } from "../api.js";
 import { createChartForSymbol } from "../chart.js";
 import { pipelineTemplates } from "../constants/strategy_pipeline_const.js";
+const path = "../../../data/symbols_nse_and_ib.csv";
 
 const templateSelect = document.getElementById("templateSelect");
 const jsonInput = document.getElementById("jsonInput");
 const chartContainer = document.getElementById("chartContainer");
+
+const symbolRank = {};
+
+async function loadSymbolRank() {
+  try {
+    const response = await fetch(path);
+    const text = await response.text();
+    const lines = text.trim().split("\n").slice(1);
+    lines.forEach((line, index) => {
+      const [symbol] = line.split(",");
+      symbolRank[symbol] = index; // smaller index = bigger market cap
+    });
+  } catch (err) {
+    console.error("Error loading Symbol Rank:", err);
+  }
+}
+
+function sortSymbolsByRank(symbols) {
+  symbols.sort((a, b) => {
+    const indexA = symbolRank[a] ?? Infinity;
+    const indexB = symbolRank[b] ?? Infinity;
+    return indexA - indexB;
+  });
+  return symbols;
+}
 
 function loadTemplateOptions() {
   Object.keys(pipelineTemplates).forEach((key) => {
@@ -32,8 +58,15 @@ async function runStrategyPipeline() {
   chartContainer.innerHTML = "Running";
   const symbols = await fetchSymbolsForJson("pipeline/run", jsonBody);
   chartContainer.innerHTML = "";
-  for (const symbol of symbols) {
-    await createChartForSymbol(chartContainer, symbol, "5min");
+  const sortedSymbols = sortSymbolsByRank(symbols);
+  for (const symbol of sortedSymbols) {
+    const symbolWrapper = document.createElement("div");
+    chartContainer.appendChild(symbolWrapper);
+    symbolWrapper.className = "symbol-wrapper";
+    symbolWrapper.innerHTML = "";
+    await createChartForSymbol(symbolWrapper, symbol, "1d");
+    await createChartForSymbol(symbolWrapper, symbol, "1h");
+    await createChartForSymbol(symbolWrapper, symbol, "5min");
   }
 }
 
@@ -44,6 +77,9 @@ templateSelect.addEventListener("change", (e) => {
   jsonInput.value = key ? pipelineTemplates[key] : "";
 });
 
-document
-  .getElementById("runBtn")
-  .addEventListener("click", runStrategyPipeline);
+document.addEventListener("DOMContentLoaded", () => {
+  loadSymbolRank();
+  document
+    .getElementById("runBtn")
+    .addEventListener("click", runStrategyPipeline);
+});
