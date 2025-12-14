@@ -7,6 +7,7 @@ from strategies.core.strategies.macd_strategy import MacdStrategy
 from strategies.core.strategies.pivotpoints_strategy import PivotPointsStrategy
 from strategies.core.strategies.rsi_strategy import RsiStrategy
 from strategies.utils.config_loader import load_config
+from strategies.core.strategies.failed_breakout_strategy import FailedBreakoutStrategy
 
 class StrategyPipeline:
     # Map strategy names to functions
@@ -21,6 +22,9 @@ class StrategyPipeline:
         "is_rsi_oversold": RsiStrategy.is_rsi_oversold,
         "is_rsi_bullish_divergence": RsiStrategy.is_rsi_bullish_divergence,
         "is_rsi_bearish_divergence": RsiStrategy.is_rsi_bearish_divergence,
+        "is_failed_bo": FailedBreakoutStrategy.is_failed_bo,
+        "is_failed_blbo": FailedBreakoutStrategy.is_failed_blbo,
+        "is_failed_brbo": FailedBreakoutStrategy.is_failed_brbo,
     }
 
     INTERVAL = "1d"
@@ -51,7 +55,10 @@ class StrategyPipeline:
                 {"strategy":"is_rsi_oversold","interval":"5min","params":{"duration":14}},
                 {"strategy":"is_near_lower_bb","interval":"5min","params":{"duration":9}},
                 {"strategy":"is_bullish_macd_crossover","interval":"5min","params":{"duration":9}},
-                {"strategy":"is_rsi_bullish_divergence","interval":"5min","params":{"duration":14}}
+                {"strategy":"is_rsi_bullish_divergence","interval":"5min","params":{"duration":14}},
+                {"strategy":"is_failed_bo","interval":"5min"},
+                {"strategy":"is_failed_blbo","interval":"5min"},
+                {"strategy":"is_failed_brbo","interval":"5min"},
             ]
         }
         """
